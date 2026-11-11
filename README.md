@@ -112,7 +112,7 @@ The app is two independent services. Any host that can run Node.js (backend) and
 | Start command | `npm run start:prod` |
 | Environment variables | see `backend/.env.example` |
 
-Set `CORS_ORIGIN` to the deployed frontend URL and `BASE_URL` to the deployed backend URL, so generated short links are correct. The backend must be served over HTTPS when the frontend is.
+Set `FRONTEND_URL` to the deployed frontend URL and `BASE_URL` to the deployed backend URL, so generated short links are correct. The backend must be served over HTTPS when the frontend is.
 
 ### Frontend
 
