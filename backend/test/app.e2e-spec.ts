@@ -23,6 +23,7 @@ describe('Health (e2e)', () => {
       .expect(200)
       .expect((res) => {
         expect(res.body.status).toBe('ok');
+        expect(['up', 'down']).toContain(res.body.redis);
         expect(typeof res.body.timestamp).toBe('string');
         expect(typeof res.body.uptime).toBe('number');
       });

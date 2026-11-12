@@ -4,6 +4,7 @@ export interface AppConfig {
   frontendUrl: string;
   baseUrl: string;
   databaseUrl: string;
+  redisUrl: string;
 }
 
 export default (): AppConfig => ({
@@ -12,4 +13,5 @@ export default (): AppConfig => ({
   frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:5173',
   baseUrl: process.env.BASE_URL ?? 'http://localhost:3000',
   databaseUrl: process.env.DATABASE_URL ?? '',
+  redisUrl: process.env.REDIS_URL ?? '',
 });
