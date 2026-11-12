@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String?   @db.VarChar(100)
+  email        String    @unique @db.VarChar(255)
+  passwordHash String?   @map("password_hash")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+  urls         Url[]
+  sessions     Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  generation Int       @default(1)
+  userAgent  String?   @map("user_agent") @db.VarChar(500)
+  ip         String?   @db.VarChar(45)
+  lastUsedAt DateTime  @default(now()) @map("last_used_at") @db.Timestamptz()
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz()
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz()
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Url {
+  id          String   @id @default(uuid()) @db.Uuid
+  originalUrl String   @map("original_url")
+  shortCode   String   @unique @map("short_code") @db.VarChar(32)
+  clicks      Int      @default(0)
+  userId      String   @map("user_id") @db.Uuid
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@index([userId, createdAt])
+  @@map("urls")
+}
