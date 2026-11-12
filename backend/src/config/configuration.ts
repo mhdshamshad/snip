@@ -3,6 +3,7 @@ export interface AppConfig {
   nodeEnv: string;
   frontendUrl: string;
   baseUrl: string;
+  databaseUrl: string;
 }
 
 export default (): AppConfig => ({
@@ -10,4 +11,5 @@ export default (): AppConfig => ({
   nodeEnv: process.env.NODE_ENV ?? 'development',
   frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:5173',
   baseUrl: process.env.BASE_URL ?? 'http://localhost:3000',
+  databaseUrl: process.env.DATABASE_URL ?? '',
 });

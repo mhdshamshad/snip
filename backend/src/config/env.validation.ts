@@ -3,9 +3,11 @@ import { plainToInstance, Type } from 'class-transformer';
 import {
   IsEnum,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   IsUrl,
+  Matches,
   Max,
   Min,
   validateSync,
@@ -40,6 +42,13 @@ class EnvironmentVariables {
     require_tld: false,
   })
   BASE_URL: string = 'http://localhost:3000';
+
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^postgres(ql)?:\/\//, {
+    message: 'DATABASE_URL must be a PostgreSQL connection string',
+  })
+  DATABASE_URL: string;
 }
 
 export function validate(config: Record<string, unknown>) {

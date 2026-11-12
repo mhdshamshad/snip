@@ -7,5 +7,5 @@ build/
 coverage/
 .DS_Store
 *.log
-*vscode
+.vscode/
 *.tsbuildinfo
