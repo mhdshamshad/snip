@@ -49,6 +49,14 @@ class EnvironmentVariables {
     message: 'DATABASE_URL must be a PostgreSQL connection string',
   })
   DATABASE_URL: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^rediss?:\/\//, {
+    message:
+      'REDIS_URL must be a Redis connection string (redis:// or rediss://)',
+  })
+  REDIS_URL: string;
 }
 
 export function validate(config: Record<string, unknown>) {
