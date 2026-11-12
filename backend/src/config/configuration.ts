@@ -5,6 +5,8 @@ export interface AppConfig {
   baseUrl: string;
   databaseUrl: string;
   redisUrl: string;
+  nodemailerEmail: string;
+  nodemailerPassword: string;
 }
 
 export default (): AppConfig => ({
@@ -14,4 +16,6 @@ export default (): AppConfig => ({
   baseUrl: process.env.BASE_URL ?? 'http://localhost:3000',
   databaseUrl: process.env.DATABASE_URL ?? '',
   redisUrl: process.env.REDIS_URL ?? '',
+  nodemailerEmail: process.env.NODEMAILER_EMAIL ?? '',
+  nodemailerPassword: process.env.NODEMAILER_PASSWORD ?? '',
 });
