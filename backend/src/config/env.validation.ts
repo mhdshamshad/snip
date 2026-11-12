@@ -57,6 +57,12 @@ class EnvironmentVariables {
       'REDIS_URL must be a Redis connection string (redis:// or rediss://)',
   })
   REDIS_URL: string;
+
+  @IsString()
+  NODEMAILER_EMAIL: string;
+
+  @IsString()
+  NODEMAILER_PASSWORD: string;
 }
 
 export function validate(config: Record<string, unknown>) {

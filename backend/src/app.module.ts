@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import configuration from './config/configuration';
 import { validate } from './config/env.validation';
 import { PrismaModule } from './database/prisma.module';
+import { EmailModule } from './email/email.module';
 import { HealthModule } from './health/health.module';
 import { RedisModule } from './redis/redis.module';
 
@@ -15,6 +16,7 @@ import { RedisModule } from './redis/redis.module';
     }),
     PrismaModule,
     RedisModule,
+    EmailModule,
     HealthModule,
   ],
 })
