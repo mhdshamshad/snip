@@ -1,15 +1,29 @@
+import { lazy, Suspense } from 'react';
+import { Route, Routes } from 'react-router-dom';
+
+import { AppLayout } from '@/components/layout/AppLayout';
+import { AppLoader } from '@/components/common/AppLoader';
+import { APP_ROUTES } from '@/constants/app-routes';
+
+const HomePage = lazy(() => import('@/pages/HomePage'));
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
+const ServerErrorPage = lazy(() => import('@/pages/ServerErrorPage'));
+
 export default function App() {
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6 selection:bg-indigo-500 selection:text-white">
-      <div className="relative w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl backdrop-blur-xl">
-        <h1 className="mt-4 text-3xl font-bold tracking-tight text-white">
-          Hello,{' '}
-          <span className="bg-linear-to-r from-indigo-400 via-violet-400 to-pink-400 bg-clip-text text-transparent">
-            Snip
-          </span>
-          !
-        </h1>
-      </div>
-    </main>
+    <Suspense fallback={<AppLoader label="Loading page" />}>
+      <Routes>
+        <Route path={APP_ROUTES.HOME} element={<HomePage />} />
+
+        {/* 2. Authenticated */}
+        <Route element={<AppLayout />}>
+          <Route path="dashboard" element={<> Hello </>} />
+        </Route>
+
+        <Route path={APP_ROUTES.SERVER_ERROR} element={<ServerErrorPage />} />
+        <Route path={APP_ROUTES.NOT_FOUND} element={<NotFoundPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </Suspense>
   );
 }

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Loader2, Search, X } from 'lucide-react';
 
@@ -29,21 +28,15 @@ export function SearchInput({
   minLength = 2,
 }: SearchInputProps) {
   const [inputValue, setInputValue] = useState(value);
-
   const debouncedValue = useDebounce(inputValue, debounce);
 
   useEffect(() => {
-    setInputValue(value);
-  }, [value]);
-
-  useEffect(() => {
     const trimmedValue = debouncedValue.trim();
-    const currentValue = value.trim();
 
-    const isValid =
-      trimmedValue.length === 0 || trimmedValue.length >= minLength;
-
-    if (isValid && trimmedValue !== currentValue) {
+    if (
+      (trimmedValue.length === 0 || trimmedValue.length >= minLength) &&
+      trimmedValue !== value.trim()
+    ) {
       onChange(trimmedValue);
     }
   }, [debouncedValue, value, onChange, minLength]);
