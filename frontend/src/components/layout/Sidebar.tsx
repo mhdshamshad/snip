@@ -1,4 +1,4 @@
-import { LayoutGrid, Link2, Settings } from 'lucide-react';
+import { LayoutGrid, Link2, Settings, X } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 import { Logo } from '@/components/common/Logo';
@@ -20,21 +20,33 @@ const DASHBOARD_NAV_ITEMS: readonly NavItem[] = [
 ];
 
 export interface SidebarProps {
+  open?: boolean;
+  onClose?: () => void;
   className?: string;
 }
 
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar({ open = false, onClose, className }: SidebarProps) {
   const location = useLocation();
 
   return (
     <aside
       className={cn(
-        'fixed inset-y-0 left-0 z-30 hidden w-60 border-r border-border bg-subtle lg:flex lg:flex-col',
+        'fixed inset-y-0 right-0 z-40 flex w-60 flex-col border-l border-border bg-subtle shadow-xs transition-transform duration-200 ease-in-out select-none',
+        'lg:left-0 lg:right-auto lg:border-r lg:border-l-0 lg:translate-x-0',
+        open ? 'translate-x-0' : 'translate-x-full lg:translate-x-0',
         className
       )}
     >
-      <div className="flex h-14 items-center border-b border-border/50 px-4">
+      <div className="flex h-14 items-center justify-between border-b border-border/50 px-4">
         <Logo to={APP_ROUTES.DASHBOARD} />
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close menu"
+          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+        >
+          <X className="size-4" />
+        </button>
       </div>
 
       <div className="mt-4 flex-1 overflow-y-auto px-3">
@@ -53,6 +65,7 @@ export function Sidebar({ className }: SidebarProps) {
                 key={item.to}
                 to={item.to}
                 end={item.end}
+                onClick={onClose}
                 className={cn(
                   'group flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   isActive
@@ -75,6 +88,7 @@ export function Sidebar({ className }: SidebarProps) {
           })}
         </nav>
       </div>
+
       <div className="border-t border-border/50 p-3">
         <UserMenu variant="sidebar" />
       </div>
