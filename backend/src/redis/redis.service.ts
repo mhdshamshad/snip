@@ -1,16 +1,16 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Redis } from 'ioredis';
-import { AppConfig } from '../config/configuration';
+import { Env } from '../config/env.validation';
 
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
   readonly client: Redis;
 
-  constructor(configService: ConfigService<AppConfig, true>) {
+  constructor(configService: ConfigService<Env, true>) {
     this.client = new Redis(
-      configService.getOrThrow('redisUrl', { infer: true }),
+      configService.getOrThrow('REDIS_URL', { infer: true }),
       {
         enableOfflineQueue: false,
         maxRetriesPerRequest: 1,

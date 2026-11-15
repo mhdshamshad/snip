@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import nodemailer, { Transporter } from 'nodemailer';
-import { AppConfig } from '../config/configuration';
+import { Env } from '../config/env.validation';
 import { IEmailService, SendEmailOptions } from './email.interface';
 
 @Injectable()
@@ -10,11 +10,11 @@ export class NodemailerEmailService implements IEmailService {
   private readonly transporter: Transporter;
   private readonly senderEmail: string;
 
-  constructor(configService: ConfigService<AppConfig, true>) {
+  constructor(configService: ConfigService<Env, true>) {
     this.senderEmail =
-      configService.get<string>('nodemailerEmail', { infer: true }) ?? '';
+      configService.get<string>('NODEMAILER_EMAIL', { infer: true }) ?? '';
     const password =
-      configService.get<string>('nodemailerPassword', { infer: true }) ?? '';
+      configService.get<string>('NODEMAILER_PASSWORD', { infer: true }) ?? '';
 
     this.transporter = nodemailer.createTransport({
       service: 'gmail',

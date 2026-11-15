@@ -1,75 +1,47 @@
 import { Environment, validate } from './env.validation';
 
-const validDatabaseUrl =
-  'postgresql://user:password@localhost:5432/snip?sslmode=require';
-const validRedisUrl = 'redis://localhost:6379';
+const validEnv = {
+  NODE_ENV: 'development',
+  PORT: '3000',
+  FRONTEND_URL: 'http://localhost:5173',
+  BASE_URL: 'http://localhost:3000',
+  DATABASE_URL:
+    'postgresql://user:password@localhost:5432/snip?sslmode=require',
+  REDIS_URL: 'redis://localhost:6379',
+  NODEMAILER_EMAIL: 'test@example.com',
+  NODEMAILER_PASSWORD: 'testpassword',
+  JWT_ACCESS_SECRET: 'access_secret_12345',
+  JWT_REFRESH_SECRET: 'refresh_secret_12345',
+  JWT_ACCESS_EXPIRES_IN: '15m',
+  REFRESH_TOKEN_EXPIRES_IN_DAYS: '7',
+};
 
 describe('env.validation', () => {
-  it('applies defaults when optional variables are omitted', () => {
-    const result = validate({
-      DATABASE_URL: validDatabaseUrl,
-      REDIS_URL: validRedisUrl,
-    });
+  it('accepts valid environment values and coerces numbers', () => {
+    const result = validate(validEnv);
 
     expect(result.PORT).toBe(3000);
     expect(result.NODE_ENV).toBe(Environment.Development);
     expect(result.FRONTEND_URL).toBe('http://localhost:5173');
     expect(result.BASE_URL).toBe('http://localhost:3000');
-    expect(result.DATABASE_URL).toBe(validDatabaseUrl);
-    expect(result.REDIS_URL).toBe(validRedisUrl);
+    expect(result.DATABASE_URL).toBe(validEnv.DATABASE_URL);
+    expect(result.REDIS_URL).toBe(validEnv.REDIS_URL);
+    expect(result.JWT_ACCESS_SECRET).toBe('access_secret_12345');
+    expect(result.REFRESH_TOKEN_EXPIRES_IN_DAYS).toBe(7);
   });
 
-  it('accepts valid environment values', () => {
-    const result = validate({
-      PORT: '4000',
-      NODE_ENV: 'production',
-      FRONTEND_URL: 'https://snip.vercel.app',
-      BASE_URL: 'https://snip-api.onrender.com',
-      DATABASE_URL: validDatabaseUrl,
-      REDIS_URL: 'rediss://default:token@upstash.io:6379',
-    });
+  it('throws on missing required variable', () => {
+    const incompleteEnv = { ...validEnv };
+    delete (incompleteEnv as any).DATABASE_URL;
 
-    expect(result.PORT).toBe(4000);
-    expect(result.NODE_ENV).toBe(Environment.Production);
-    expect(result.FRONTEND_URL).toBe('https://snip.vercel.app');
-    expect(result.BASE_URL).toBe('https://snip-api.onrender.com');
-    expect(result.DATABASE_URL).toBe(validDatabaseUrl);
-    expect(result.REDIS_URL).toBe('rediss://default:token@upstash.io:6379');
+    expect(() => validate(incompleteEnv)).toThrow();
   });
 
-  it('throws on invalid PORT, BASE_URL, NODE_ENV, DATABASE_URL, or REDIS_URL', () => {
+  it('throws on invalid NODE_ENV', () => {
     expect(() =>
       validate({
-        PORT: '70000',
-        DATABASE_URL: validDatabaseUrl,
-        REDIS_URL: validRedisUrl,
-      }),
-    ).toThrow();
-    expect(() =>
-      validate({
-        BASE_URL: 'ftp://invalid.example.com',
-        DATABASE_URL: validDatabaseUrl,
-        REDIS_URL: validRedisUrl,
-      }),
-    ).toThrow();
-    expect(() =>
-      validate({
-        NODE_ENV: 'staging',
-        DATABASE_URL: validDatabaseUrl,
-        REDIS_URL: validRedisUrl,
-      }),
-    ).toThrow();
-    expect(() => validate({})).toThrow();
-    expect(() =>
-      validate({
-        DATABASE_URL: 'mysql://localhost:3306/snip',
-        REDIS_URL: validRedisUrl,
-      }),
-    ).toThrow();
-    expect(() =>
-      validate({
-        DATABASE_URL: validDatabaseUrl,
-        REDIS_URL: 'http://localhost:6379',
+        ...validEnv,
+        NODE_ENV: 'invalid_env',
       }),
     ).toThrow();
   });

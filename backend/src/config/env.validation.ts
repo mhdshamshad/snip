@@ -1,15 +1,10 @@
 import 'reflect-metadata';
-import { plainToInstance, Type } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
 import {
   IsEnum,
   IsInt,
   IsNotEmpty,
-  IsOptional,
   IsString,
-  IsUrl,
-  Matches,
-  Max,
-  Min,
   validateSync,
 } from 'class-validator';
 
@@ -19,64 +14,59 @@ export enum Environment {
   Test = 'test',
 }
 
-class EnvironmentVariables {
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(65535)
-  PORT: number = 3000;
-
-  @IsOptional()
+export class Env {
   @IsEnum(Environment)
-  NODE_ENV: Environment = Environment.Development;
+  NODE_ENV!: Environment;
 
-  @IsOptional()
-  @IsString()
-  FRONTEND_URL: string = 'http://localhost:5173';
+  @IsInt()
+  PORT!: number;
 
-  @IsOptional()
-  @IsUrl({
-    protocols: ['http', 'https'],
-    require_protocol: true,
-    require_tld: false,
-  })
-  BASE_URL: string = 'http://localhost:3000';
-
-  @IsString()
   @IsNotEmpty()
-  @Matches(/^postgres(ql)?:\/\//, {
-    message: 'DATABASE_URL must be a PostgreSQL connection string',
-  })
-  DATABASE_URL: string;
-
   @IsString()
+  FRONTEND_URL!: string;
+
   @IsNotEmpty()
-  @Matches(/^rediss?:\/\//, {
-    message:
-      'REDIS_URL must be a Redis connection string (redis:// or rediss://)',
-  })
-  REDIS_URL: string;
-
   @IsString()
-  NODEMAILER_EMAIL: string;
+  BASE_URL!: string;
 
+  @IsNotEmpty()
   @IsString()
-  NODEMAILER_PASSWORD: string;
+  DATABASE_URL!: string;
+
+  @IsNotEmpty()
+  @IsString()
+  REDIS_URL!: string;
+
+  @IsNotEmpty()
+  @IsString()
+  NODEMAILER_EMAIL!: string;
+
+  @IsNotEmpty()
+  @IsString()
+  NODEMAILER_PASSWORD!: string;
+
+  @IsNotEmpty()
+  @IsString()
+  JWT_ACCESS_SECRET!: string;
+
+  @IsNotEmpty()
+  @IsString()
+  JWT_REFRESH_SECRET!: string;
+
+  @IsNotEmpty()
+  @IsString()
+  JWT_ACCESS_EXPIRES_IN!: string;
+
+  @IsInt()
+  REFRESH_TOKEN_EXPIRES_IN_DAYS!: number;
 }
 
-export function validate(config: Record<string, unknown>) {
-  const validatedConfig = plainToInstance(EnvironmentVariables, config, {
-    enableImplicitConversion: true,
-  });
-
-  const errors = validateSync(validatedConfig, {
-    skipMissingProperties: false,
-  });
+export function validate(config: Record<string, unknown>): Env {
+  const env = plainToInstance(Env, config, { enableImplicitConversion: true });
+  const errors = validateSync(env);
 
   if (errors.length > 0) {
-    throw new Error(errors.toString());
+    throw new Error(`Invalid environment configuration:\n${errors.toString()}`);
   }
-
-  return validatedConfig;
+  return env;
 }
