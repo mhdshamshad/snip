@@ -1,0 +1,137 @@
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import type { Request, Response } from 'express';
+import { ConfigService } from '@nestjs/config';
+import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ResendOtpDto } from './dto/resend-otp.dto';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { AuthGuard } from './guards/auth.guard';
+import {
+  clearRefreshCookie,
+  REFRESH_COOKIE_NAME,
+  setRefreshCookie,
+} from '../shared/utils/cookie.util';
+import { Env, Environment } from '../config/env.validation';
+
+@Controller('auth')
+export class AuthController {
+  private readonly isProduction: boolean;
+  private readonly refreshTtl: number;
+
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService<Env, true>,
+  ) {
+    this.isProduction =
+      this.configService.get('NODE_ENV', { infer: true }) ===
+      Environment.Production;
+
+    this.refreshTtl =
+      this.configService.get('REFRESH_TOKEN_EXPIRES_IN_DAYS', { infer: true }) *
+      86400; // 24 * 60 * 60
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('login')
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { accessToken, refreshToken, user } =
+      await this.authService.login(dto);
+
+    setRefreshCookie(res, refreshToken, this.isProduction, this.refreshTtl);
+
+    return { accessToken, user };
+  }
+
+  @Post('register')
+  async register(@Body() dto: RegisterDto) {
+    await this.authService.register(dto);
+    return {
+      message: 'Verification code sent to your email',
+    };
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('verify-otp')
+  async verifyOtp(
+    @Body() dto: VerifyOtpDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { accessToken, refreshToken, user } =
+      await this.authService.verifyOtp(dto);
+    setRefreshCookie(res, refreshToken, this.isProduction, this.refreshTtl);
+    return { accessToken, user };
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('resend-otp')
+  async resendOtp(@Body() dto: ResendOtpDto) {
+    return this.authService.resendOtp(dto);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('refresh')
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const rawRefreshToken = req.cookies?.[REFRESH_COOKIE_NAME] as
+      string | undefined;
+    const rawAccessToken = req.headers.authorization?.split(' ')[1];
+    clearRefreshCookie(res, this.isProduction);
+    const { user, accessToken, refreshToken } = await this.authService.refresh(
+      rawRefreshToken ?? '',
+      rawAccessToken,
+    );
+    setRefreshCookie(res, refreshToken, this.isProduction, this.refreshTtl);
+
+    return {
+      accessToken,
+      user,
+    };
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('logout')
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const rawRefreshToken = req.cookies?.[REFRESH_COOKIE_NAME] as
+      string | undefined;
+    const rawAccessToken = req.headers.authorization?.split(' ')[1];
+
+    await this.authService.logout(rawRefreshToken, rawAccessToken);
+    clearRefreshCookie(res, this.isProduction);
+    return { message: 'Logged out successfully' };
+  }
+
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Post('logout-all')
+  async logoutAll(
+    @CurrentUser('id') userId: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.authService.logoutAll(userId);
+    clearRefreshCookie(res, this.isProduction);
+    return { message: 'Logged out from all devices successfully' };
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('me')
+  async getMe(@CurrentUser('id') userId: string) {
+    return this.authService.getMe(userId);
+  }
+}
