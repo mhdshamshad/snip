@@ -27,6 +27,10 @@ export class Env {
 
   @IsNotEmpty()
   @IsString()
+  GOOGLE_CLIENT_ID!: string;
+
+  @IsNotEmpty()
+  @IsString()
   BASE_URL!: string;
 
   @IsNotEmpty()

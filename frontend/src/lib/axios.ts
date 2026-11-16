@@ -27,6 +27,7 @@ const refreshClient = axios.create({
 
 const PUBLIC_URLS = new Set<string>([
   AUTH_API.LOGIN,
+  AUTH_API.GOOGLE,
   AUTH_API.REGISTER,
   AUTH_API.VERIFY_OTP,
   AUTH_API.RESEND_OTP,

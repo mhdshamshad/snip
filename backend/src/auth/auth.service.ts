@@ -11,12 +11,14 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
-import { randomUUID } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
+import { OAuth2Client, type TokenPayload } from 'google-auth-library';
 import {
   type IUserRepository,
   USER_REPOSITORY,
 } from '../users/repositories/IUserRepository';
 import { LoginDto } from './dto/login.dto';
+import { GoogleAuthDto } from './dto/google-auth.dto';
 import { RegisterDto } from './dto/register.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
@@ -46,6 +48,7 @@ const MAX_OTP_ATTEMPTS = 5;
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  private readonly googleClient = new OAuth2Client();
   private readonly refreshTtl: number;
 
   constructor(
@@ -265,6 +268,63 @@ export class AuthService {
     return {
       ...tokens,
       user: toUserResponse(user),
+    };
+  }
+
+  async googleLogin({ idToken }: GoogleAuthDto) {
+    const googleClientIds = this.configService
+      .get('GOOGLE_CLIENT_ID', { infer: true })
+      .split(',')
+      .map((id) => id.trim());
+
+    let payload: TokenPayload | undefined;
+    try {
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken,
+        audience: googleClientIds,
+      });
+      payload = ticket.getPayload();
+    } catch (error: unknown) {
+      this.logger.warn('Google ID token verification failed', {
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+      });
+      throw new UnauthorizedException(
+        'Google authentication failed. Please try again.',
+      );
+    }
+
+    if (!payload?.email || payload.email_verified !== true) {
+      throw new UnauthorizedException(
+        'A verified Google email address is required.',
+      );
+    }
+    const email = payload.email.trim().toLowerCase();
+    const deviceId = randomUUID();
+
+    const user = await this.userRepo.findByEmail(email);
+
+    if (user) {
+      return {
+        ...(await this._createSession(user.id, user.email, deviceId)),
+        user: toUserResponse(user),
+      };
+    }
+
+    const passwordHash = await hashPassword(randomBytes(32).toString('hex'));
+    const newUser = await this.userRepo.create({
+      name: (payload.name ?? email.split('@')[0]).slice(0, 30),
+      email,
+      passwordHash,
+    });
+
+    const tokens = await this._createSession(
+      newUser.id,
+      newUser.email,
+      deviceId,
+    );
+    return {
+      ...tokens,
+      user: toUserResponse(newUser),
     };
   }
 

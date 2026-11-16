@@ -4,6 +4,7 @@ import type { ApiResponse } from '@/types/api.types';
 import {
   type LoginFormType,
   type LoginResponse,
+  type GoogleAuthPayload,
   type RegisterRequest,
   type ResendOtpRequest,
   type ResetPasswordRequest,
@@ -33,6 +34,10 @@ export const authApi = {
   },
   login: async (data: LoginFormType): Promise<ApiResponse<LoginResponse>> => {
     const res = await api.post<ApiResponse<LoginResponse>>(AUTH_API.LOGIN, data);
+    return res.data;
+  },
+  googleLogin: async (data: GoogleAuthPayload): Promise<ApiResponse<LoginResponse>> => {
+    const res = await api.post<ApiResponse<LoginResponse>>(AUTH_API.GOOGLE, data);
     return res.data;
   },
   logout: async (): Promise<ApiResponse<null>> => {

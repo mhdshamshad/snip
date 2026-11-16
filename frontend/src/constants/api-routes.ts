@@ -1,5 +1,6 @@
 export const AUTH_API = {
   LOGIN: '/auth/login',
+  GOOGLE: '/auth/google',
   REGISTER: '/auth/register',
   VERIFY_OTP: '/auth/verify-otp',
   RESEND_OTP: '/auth/resend-otp',

@@ -13,6 +13,7 @@ import type { Request, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { GoogleAuthDto } from './dto/google-auth.dto';
 import { RegisterDto } from './dto/register.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
@@ -56,6 +57,19 @@ export class AuthController {
 
     setRefreshCookie(res, refreshToken, this.isProduction, this.refreshTtl);
 
+    return { accessToken, user };
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('google')
+  async googleLogin(
+    @Body() dto: GoogleAuthDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { accessToken, refreshToken, user } =
+      await this.authService.googleLogin(dto);
+
+    setRefreshCookie(res, refreshToken, this.isProduction, this.refreshTtl);
     return { accessToken, user };
   }
 

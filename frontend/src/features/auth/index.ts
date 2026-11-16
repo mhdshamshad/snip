@@ -11,6 +11,7 @@ export * from './components/AuthInitializer';
 export * from './stores/auth.store';
 export * from './types/auth.types';
 export * from './hooks/useLogin';
+export * from './hooks/useGoogleLogin';
 export * from './hooks/useLogout';
 export * from './hooks/useInitAuth';
 export * from './hooks/useRegister';
