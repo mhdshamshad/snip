@@ -2,6 +2,7 @@ export const AUTH_API = {
   LOGIN: '/auth/login',
   REGISTER: '/auth/register',
   VERIFY_OTP: '/auth/verify-otp',
+  RESEND_OTP: '/auth/resend-otp',
   REFRESH: '/auth/refresh',
   LOGOUT: '/auth/logout',
   LOGOUT_ALL: '/auth/logout-all',

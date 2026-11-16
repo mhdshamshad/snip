@@ -58,7 +58,7 @@ const STEPS = [
   {
     icon: UserPlus,
     title: 'Create your account',
-    body: 'Sign up with your name and email. It takes less than a minute.',
+    body: 'Register with your name and email. It takes less than a minute.',
   },
   {
     icon: PenLine,

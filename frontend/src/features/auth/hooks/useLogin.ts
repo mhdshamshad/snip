@@ -13,7 +13,7 @@ export function useLogin() {
       useAuthStore.getState().setCredentials(user, accessToken);
       queryClient.setQueryData(authKeys.profile(), user);
 
-      toast.success(res.message);
+      toast.success('Logged in successfully');
     },
   });
 }

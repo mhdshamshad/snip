@@ -11,6 +11,8 @@ const ServerErrorPage = lazy(() => import('@/pages/ServerErrorPage'));
 const UnauthorizedPage = lazy(() => import('@/pages/UnauthorizedPage'));
 
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'));
+const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage'));
+const VerifyOtpPage = lazy(() => import('@/features/auth/pages/VerifyOtpPage'));
 
 export default function App() {
   return (
@@ -19,6 +21,8 @@ export default function App() {
         <Route path={APP_ROUTES.HOME} element={<HomePage />} />
 
         <Route path={APP_ROUTES.LOGIN} element={<LoginPage />} />
+        <Route path={APP_ROUTES.REGISTER} element={<RegisterPage />} />
+        <Route path={APP_ROUTES.VERIFY_OTP} element={<VerifyOtpPage />} />
 
         {/* 2. Authenticated */}
         <Route element={<AppLayout />}>
