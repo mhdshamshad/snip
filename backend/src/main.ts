@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { Env } from './config/env.validation';
+import { Env, Environment } from './config/env.validation';
 import { TransformInterceptor } from './shared/interceptors/transform.interceptor';
 import { AllExceptionsFilter } from './shared/filters/http-exception.filter';
 import { PrismaClientExceptionFilter } from './shared/filters/prisma-client-exception.filter';
@@ -13,6 +13,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get<ConfigService<Env, true>>(ConfigService);
 
+  const nodeEnv = configService.getOrThrow('NODE_ENV', { infer: true });
+  const isProduction = nodeEnv === Environment.Production;
+
   const frontendUrl = configService.getOrThrow('FRONTEND_URL', { infer: true });
   const origins = frontendUrl
     .split(',')
@@ -21,7 +24,7 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.enableCors({
-    origin: origins,
+    origin: isProduction ? origins : true,
     credentials: true,
   });
 

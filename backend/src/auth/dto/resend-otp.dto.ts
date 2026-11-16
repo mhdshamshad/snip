@@ -1,9 +1,5 @@
-import { IsEmail, IsNotEmpty } from 'class-validator';
-import { Trim } from '../../shared/decorators/trim.decorator';
+import { EmailField } from '../../shared/decorators/validation.decorators';
 
 export class ResendOtpDto {
-  @Trim()
-  @IsEmail({}, { message: 'A valid email is required' })
-  @IsNotEmpty({ message: 'Email is required' })
-  email!: string;
+  @EmailField() email!: string;
 }
