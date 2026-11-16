@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import {
   ArrowDown,
   ArrowRight,
@@ -19,6 +19,7 @@ import {
 import { Footer, Navbar } from '@/components/layout';
 import { APP_ROUTES } from '@/constants/app-routes';
 import { Button } from '@/components/common';
+import { useAuthStore } from '@/features/auth';
 
 const FEATURES = [
   {
@@ -57,7 +58,7 @@ const STEPS = [
   {
     icon: UserPlus,
     title: 'Create your account',
-    body: 'Sign up with your name and email. It takes less than a minute.',
+    body: 'Register with your name and email. It takes less than a minute.',
   },
   {
     icon: PenLine,
@@ -77,102 +78,13 @@ const PREVIEW_ROWS = [
   { code: 'Hq7xTb', domain: 'github.com', clicks: '268', letter: 'G' },
 ];
 
-function ProductPreview() {
-  return (
-    <div aria-hidden="true" className="relative">
-      <div className="dot-grid absolute -inset-4 rounded-3xl opacity-60 mask-[radial-gradient(ellipse_at_center,black_40%,transparent_75%)] sm:-inset-8" />
-      <div className="relative overflow-hidden rounded-xl border border-border bg-card shadow-md">
-        <div className="flex items-center gap-1.5 border-b border-border bg-subtle px-4 py-2.5">
-          <span className="size-2.5 rounded-full bg-border" />
-          <span className="size-2.5 rounded-full bg-border" />
-          <span className="size-2.5 rounded-full bg-border" />
-          <span className="ml-3 truncate font-mono text-[11px] text-muted-foreground">
-            snip.app/dashboard
-          </span>
-        </div>
-        <div className="space-y-3 p-4 sm:p-5">
-          <div className="rounded-lg border border-border bg-subtle p-3">
-            <p className="text-[11px] font-medium text-muted-foreground">Destination URL</p>
-            <p className="mt-1 truncate font-mono text-xs text-foreground/80">
-              https://www.figma.com/community/file/1219416380519421/launch-kit-2026?ref=newsletter&utm_source=email
-            </p>
-          </div>
-          <div className="flex justify-center">
-            <span className="inline-flex size-6 items-center justify-center rounded-full border border-border bg-card">
-              <ArrowDown className="size-3 text-muted-foreground" />
-            </span>
-          </div>
-          <div className="flex items-center gap-3 rounded-lg border border-brand/30 bg-brand-soft/60 p-3">
-            <span className="inline-flex size-8 items-center justify-center rounded-md border border-border bg-card text-xs font-semibold text-foreground">
-              F
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-mono text-sm font-medium text-foreground">
-                snip.app/r/launch-kit
-              </p>
-              <p className="flex items-center gap-1 text-[11px] text-success font-medium">
-                <Check className="size-3" /> Ready to share
-              </p>
-            </div>
-            <span className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-foreground shadow-xs">
-              <Copy className="size-3" /> Copy
-            </span>
-          </div>
-        </div>
-        <div className="border-t border-border">
-          {PREVIEW_ROWS.map(r => (
-            <div
-              key={r.code}
-              className="flex items-center gap-3 border-b border-border px-4 py-2.5 sm:px-5"
-            >
-              <span className="inline-flex size-7 items-center justify-center rounded-md border border-border bg-card text-[11px] font-semibold text-muted-foreground">
-                {r.letter}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-mono text-xs font-medium text-foreground">/{r.code}</p>
-                <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                  <Globe className="size-3" /> {r.domain}
-                </p>
-              </div>
-              <span className="inline-flex items-center gap-1 font-mono text-xs font-medium text-foreground">
-                <MousePointerClick className="size-3 text-muted-foreground" /> {r.clicks}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FlowCard({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string;
-  value: string;
-  icon?: typeof Server;
-}) {
-  return (
-    <div className="flex min-w-0 flex-col justify-center rounded-lg border border-border bg-card p-4 shadow-xs">
-      <p className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-        {Icon && <Icon className="size-3" />} {label}
-      </p>
-      <p className="mt-1.5 break-all font-mono text-[13px] font-medium text-foreground">{value}</p>
-    </div>
-  );
-}
-
-function FlowArrow() {
-  return (
-    <div className="flex items-center justify-center text-muted-foreground">
-      <ArrowRight className="size-4 rotate-90 md:rotate-0" />
-    </div>
-  );
-}
-
 export default function HomePage() {
+  const { isAuthenticated } = useAuthStore();
+
+  if (isAuthenticated) {
+    return <Navigate to={APP_ROUTES.DASHBOARD} replace />;
+  }
+
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground antialiased selection:bg-brand/20 selection:text-brand">
       <Navbar />
@@ -327,6 +239,101 @@ export default function HomePage() {
       </main>
 
       <Footer />
+    </div>
+  );
+}
+
+function ProductPreview() {
+  return (
+    <div aria-hidden="true" className="relative">
+      <div className="dot-grid absolute -inset-4 rounded-3xl opacity-60 mask-[radial-gradient(ellipse_at_center,black_40%,transparent_75%)] sm:-inset-8" />
+      <div className="relative overflow-hidden rounded-xl border border-border bg-card shadow-md">
+        <div className="flex items-center gap-1.5 border-b border-border bg-subtle px-4 py-2.5">
+          <span className="size-2.5 rounded-full bg-border" />
+          <span className="size-2.5 rounded-full bg-border" />
+          <span className="size-2.5 rounded-full bg-border" />
+          <span className="ml-3 truncate font-mono text-[11px] text-muted-foreground">
+            snip.app/dashboard
+          </span>
+        </div>
+        <div className="space-y-3 p-4 sm:p-5">
+          <div className="rounded-lg border border-border bg-subtle p-3">
+            <p className="text-[11px] font-medium text-muted-foreground">Destination URL</p>
+            <p className="mt-1 truncate font-mono text-xs text-foreground/80">
+              https://www.figma.com/community/file/1219416380519421/launch-kit-2026?ref=newsletter&utm_source=email
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <span className="inline-flex size-6 items-center justify-center rounded-full border border-border bg-card">
+              <ArrowDown className="size-3 text-muted-foreground" />
+            </span>
+          </div>
+          <div className="flex items-center gap-3 rounded-lg border border-brand/30 bg-brand-soft/60 p-3">
+            <span className="inline-flex size-8 items-center justify-center rounded-md border border-border bg-card text-xs font-semibold text-foreground">
+              F
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-mono text-sm font-medium text-foreground">
+                snip.app/r/launch-kit
+              </p>
+              <p className="flex items-center gap-1 text-[11px] text-success font-medium">
+                <Check className="size-3" /> Ready to share
+              </p>
+            </div>
+            <span className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-foreground shadow-xs">
+              <Copy className="size-3" /> Copy
+            </span>
+          </div>
+        </div>
+        <div className="border-t border-border">
+          {PREVIEW_ROWS.map(r => (
+            <div
+              key={r.code}
+              className="flex items-center gap-3 border-b border-border px-4 py-2.5 sm:px-5"
+            >
+              <span className="inline-flex size-7 items-center justify-center rounded-md border border-border bg-card text-[11px] font-semibold text-muted-foreground">
+                {r.letter}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-mono text-xs font-medium text-foreground">/{r.code}</p>
+                <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <Globe className="size-3" /> {r.domain}
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-1 font-mono text-xs font-medium text-foreground">
+                <MousePointerClick className="size-3 text-muted-foreground" /> {r.clicks}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FlowCard({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  icon?: typeof Server;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col justify-center rounded-lg border border-border bg-card p-4 shadow-xs">
+      <p className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+        {Icon && <Icon className="size-3" />} {label}
+      </p>
+      <p className="mt-1.5 break-all font-mono text-[13px] font-medium text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function FlowArrow() {
+  return (
+    <div className="flex items-center justify-center text-muted-foreground">
+      <ArrowRight className="size-4 rotate-90 md:rotate-0" />
     </div>
   );
 }

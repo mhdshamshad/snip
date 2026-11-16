@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronsUpDown, LogOut, Settings } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 import { APP_ROUTES } from '@/constants/app-routes';
+import { useLogout } from '@/features/auth/hooks/useLogout';
+import { useAuthStore } from '@/features/auth/stores/auth.store';
 import { cn } from '@/lib/utils';
 
 function getInitials(name: string): string {
@@ -31,14 +33,11 @@ export interface UserMenuProps {
   variant?: 'sidebar' | 'compact';
 }
 
-const user: { name: string; email: string } = {
-  name: 'shalu',
-  email: 'shalu@gmail.com',
-};
 export function UserMenu({ variant = 'sidebar' }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
+  const user = useAuthStore(state => state.user);
+  const logout = useLogout();
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
@@ -66,11 +65,11 @@ export function UserMenu({ variant = 'sidebar' }: UserMenuProps) {
 
   const handleLogout = () => {
     setIsOpen(false);
-    navigate(APP_ROUTES.LOGIN, { replace: true });
+    logout.mutate();
   };
 
-  const displayName = user.name;
-  const displayEmail = user.email;
+  const displayName = user?.name || 'Account';
+  const displayEmail = user?.email || 'user@example.com';
 
   return (
     <div ref={menuRef} className="relative w-full">
@@ -82,7 +81,7 @@ export function UserMenu({ variant = 'sidebar' }: UserMenuProps) {
           aria-label="User account menu"
           className="group flex w-full items-center gap-2.5 rounded-lg p-2 text-left transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <UserAvatar name={user?.name} />
+          <UserAvatar name={displayName} />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[13px] font-medium text-foreground">
               {displayName}
@@ -99,7 +98,7 @@ export function UserMenu({ variant = 'sidebar' }: UserMenuProps) {
           aria-label="User account menu"
           className="rounded-full ring-offset-2 ring-offset-background transition-shadow hover:ring-2 hover:ring-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <UserAvatar name={user?.name} className="size-8" />
+          <UserAvatar name={displayName} className="size-8" />
         </button>
       )}
 
@@ -129,6 +128,7 @@ export function UserMenu({ variant = 'sidebar' }: UserMenuProps) {
             <button
               type="button"
               onClick={handleLogout}
+              disabled={logout.isPending}
               className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
             >
               <LogOut className="size-3.5" />

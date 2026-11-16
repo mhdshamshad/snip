@@ -1,12 +1,20 @@
 import { Suspense, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 import { AppLoader } from '@/components/common/AppLoader';
+import { useAuthStore } from '@/features/auth';
+import { APP_ROUTES } from '@/constants/app-routes';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
+  const { isAuthenticated } = useAuthStore();
+
+  if (!isAuthenticated) {
+    return <Navigate to={APP_ROUTES.LOGIN} replace state={{ from: location }} />;
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground antialiased selection:bg-brand/20 selection:text-brand">

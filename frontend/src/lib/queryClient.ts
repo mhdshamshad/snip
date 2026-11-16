@@ -2,7 +2,15 @@ import { QueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { toast } from 'sonner';
 
+import { isPublicRequest } from '@/lib/axios';
+import { useAuthStore } from '@/features/auth/stores/auth.store';
 import { handleApiError } from '@/utils/handleApiError';
+
+const isSessionExpiredRedirect = (error: unknown): boolean =>
+  axios.isAxiosError(error) &&
+  error.response?.status === 401 &&
+  !isPublicRequest(error.config?.url) &&
+  !useAuthStore.getState().isAuthenticated;
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,8 +29,7 @@ export const queryClient = new QueryClient({
     mutations: {
       retry: 0,
       onError: error => {
-        // Silent on 401 (handled by Axios auth interceptor / redirect)
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
+        if (isSessionExpiredRedirect(error)) {
           return;
         }
         toast.error(handleApiError(error));

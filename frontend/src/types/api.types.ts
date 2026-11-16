@@ -5,9 +5,10 @@ export interface ApiResponse<T = unknown> {
 }
 
 export interface ApiErrorResponse {
+  success: false;
   statusCode: number;
   message: string | string[];
-  error?: string;
-  timestamp?: string;
-  path?: string;
+  error: string;
+  timestamp: string;
+  path: string;
 }

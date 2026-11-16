@@ -5,6 +5,7 @@ export interface FormFieldProps {
   label: string;
   required?: boolean;
   helperText?: React.ReactNode;
+  labelAction?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
 }
@@ -13,6 +14,7 @@ export function FormField({
   label,
   required = false,
   helperText,
+  labelAction,
   className,
   children,
 }: FormFieldProps) {
@@ -24,18 +26,20 @@ export function FormField({
 
   return (
     <div className={cn('space-y-1.5', className)}>
-      <label
-        htmlFor={fieldId}
-        className="flex items-center gap-1 text-[13px] font-medium text-foreground select-none"
-      >
-        <span>{label}</span>
-        {required && (
-          <span className="text-destructive text-sm leading-none" aria-hidden="true">
-            *
-          </span>
-        )}
-      </label>
-
+      <div className="flex items-center justify-between gap-2">
+        <label
+          htmlFor={fieldId}
+          className="flex items-center gap-1 text-[13px] font-medium text-foreground select-none"
+        >
+          <span>{label}</span>
+          {required && (
+            <span className="text-destructive text-sm leading-none" aria-hidden="true">
+              *
+            </span>
+          )}
+        </label>
+        {labelAction}
+      </div>
       {children}
 
       {helperText && (

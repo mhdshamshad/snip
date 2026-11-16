@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
-import { AppConfig } from '../config/configuration';
+import { Env } from '../config/env.validation';
 
 @Injectable()
 export class PrismaService
@@ -12,8 +12,8 @@ export class PrismaService
 {
   private readonly pool: Pool;
 
-  constructor(configService: ConfigService<AppConfig, true>) {
-    const connectionString = configService.getOrThrow('databaseUrl', {
+  constructor(configService: ConfigService<Env, true>) {
+    const connectionString = configService.getOrThrow('DATABASE_URL', {
       infer: true,
     });
     const pool = new Pool({
