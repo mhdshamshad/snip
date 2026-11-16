@@ -2,6 +2,7 @@ export const APP_ROUTES = {
   HOME: '/',
   LOGIN: '/login',
   REGISTER: '/register',
+  FORGOT_PASSWORD: '/forgot-password',
   VERIFY_OTP: '/verify-otp',
   DASHBOARD: '/dashboard',
   URLS: '/dashboard/urls',

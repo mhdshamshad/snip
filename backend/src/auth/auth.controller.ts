@@ -16,6 +16,8 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { AuthGuard } from './guards/auth.guard';
 import {
@@ -40,7 +42,7 @@ export class AuthController {
 
     this.refreshTtl =
       this.configService.get('REFRESH_TOKEN_EXPIRES_IN_DAYS', { infer: true }) *
-      86400; // 24 * 60 * 60
+      86400000; // 24 * 60 * 60 * 1000
   }
 
   @HttpCode(HttpStatus.OK)
@@ -81,6 +83,25 @@ export class AuthController {
   @Post('resend-otp')
   async resendOtp(@Body() dto: ResendOtpDto) {
     return this.authService.resendOtp(dto);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.authService.forgotPassword(dto);
+    return {
+      message: 'reset code has been sent this email',
+    };
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('reset-password')
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto);
+    return {
+      message:
+        'Password reset successful. Please sign in with your new password.',
+    };
   }
 
   @HttpCode(HttpStatus.OK)

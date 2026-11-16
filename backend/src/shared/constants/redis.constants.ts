@@ -8,6 +8,11 @@ export const REDIS_KEYS = {
       `auth:refresh:${userId}:${deviceId}`,
     REFRESH_PATTERN: (userId: string) => `auth:refresh:${userId}:*`,
     REGISTER_OTP: (email: string) => `auth:register_otp:${email}`,
+    REGISTER_OTP_ATTEMPTS: (email: string) =>
+      `auth:register_otp_attempts:${email}`,
+    PASSWORD_RESET: (email: string) => `auth:password_reset:${email}`,
+    PASSWORD_RESET_ATTEMPTS: (email: string) =>
+      `auth:password_reset_attempts:${email}`,
   },
 } as const;
 

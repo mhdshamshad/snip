@@ -6,6 +6,7 @@ import {
   type LoginResponse,
   type RegisterRequest,
   type ResendOtpRequest,
+  type ResetPasswordRequest,
   type VerifyOtpFormType,
 } from '@/features/auth';
 
@@ -20,6 +21,14 @@ export const authApi = {
   },
   resendOtp: async (data: ResendOtpRequest): Promise<ApiResponse<null>> => {
     const res = await api.post<ApiResponse<null>>(AUTH_API.RESEND_OTP, data);
+    return res.data;
+  },
+  forgotPassword: async (email: string): Promise<ApiResponse<null>> => {
+    const res = await api.post<ApiResponse<null>>(AUTH_API.FORGOT_PASSWORD, { email });
+    return res.data;
+  },
+  resetPassword: async (data: ResetPasswordRequest): Promise<ApiResponse<null>> => {
+    const res = await api.post<ApiResponse<null>>(AUTH_API.RESET_PASSWORD, data);
     return res.data;
   },
   login: async (data: LoginFormType): Promise<ApiResponse<LoginResponse>> => {

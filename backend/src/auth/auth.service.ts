@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   Logger,
@@ -18,6 +20,8 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { comparePassword, hashPassword } from '../shared/utils/password.util';
 import { generateOtp6Digit } from '../shared/utils/otp.util';
 import { Env, Environment } from '../config/env.validation';
@@ -37,6 +41,7 @@ interface PendingRegistration {
   otp: string;
 }
 const SESSION_EXPIRED = 'Your session has expired. Please sign in again.';
+const MAX_OTP_ATTEMPTS = 5;
 
 @Injectable()
 export class AuthService {
@@ -67,7 +72,12 @@ export class AuthService {
     const otp = generateOtp6Digit();
     const [passwordHash] = await Promise.all([
       hashPassword(password),
-      this._sendOtpEmail(email, otp, 'Verify your Snip account'),
+      this._sendOtpEmail(
+        email,
+        otp,
+        'Verify your Snip account',
+        'Welcome to Snip! Use the code below to complete your registration.',
+      ),
     ]);
 
     const pendingData: PendingRegistration = {
@@ -77,22 +87,44 @@ export class AuthService {
       otp,
     };
 
-    await this.redisService.set(
-      REDIS_KEYS.AUTH.REGISTER_OTP(email),
-      JSON.stringify(pendingData),
-      OTP_TTL_SECONDS,
-    );
+    await Promise.all([
+      this.redisService.set(
+        REDIS_KEYS.AUTH.REGISTER_OTP(email),
+        JSON.stringify(pendingData),
+        OTP_TTL_SECONDS,
+      ),
+      this.redisService.delete(REDIS_KEYS.AUTH.REGISTER_OTP_ATTEMPTS(email)),
+    ]);
   }
 
   async verifyOtp({ email, otp }: VerifyOtpDto) {
-    const pending = await this._getPending(email);
+    const otpKey = REDIS_KEYS.AUTH.REGISTER_OTP(email);
+    const attemptsKey = REDIS_KEYS.AUTH.REGISTER_OTP_ATTEMPTS(email);
+
+    const [attempts, pending] = await Promise.all([
+      this.redisService.incr(attemptsKey, OTP_TTL_SECONDS),
+      this._getPending(email),
+    ]);
+
     if (!pending) {
-      throw new BadRequestException('Invalid or expired verification code');
+      throw new BadRequestException(
+        'Invalid or expired verification code. Please register again.',
+      );
     }
     if (pending.otp !== otp) {
-      throw new BadRequestException('Invalid verification code');
+      throw new BadRequestException(
+        `Invalid verification code. ${MAX_OTP_ATTEMPTS - attempts + 1} attempt(s) remaining.`,
+      );
     }
 
+    if (attempts > MAX_OTP_ATTEMPTS) {
+      await this.redisService.delete(otpKey);
+
+      throw new HttpException(
+        'Too many failed attempts. Please register again.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
     if (await this.userRepo.findByEmail(email)) {
       throw new ConflictException('Email already in use');
     }
@@ -106,7 +138,8 @@ export class AuthService {
     const deviceId = randomUUID();
     const [tokens] = await Promise.all([
       this._createSession(user.id, user.email, deviceId),
-      this.redisService.delete(REDIS_KEYS.AUTH.REGISTER_OTP(email)),
+      this.redisService.delete(otpKey),
+      this.redisService.delete(attemptsKey),
     ]);
 
     return {
@@ -133,12 +166,90 @@ export class AuthService {
         JSON.stringify(pending),
         OTP_TTL_SECONDS,
       ),
-      this._sendOtpEmail(email, pending.otp, 'Your new Snip verification code'),
+      this.redisService.delete(REDIS_KEYS.AUTH.REGISTER_OTP_ATTEMPTS(email)),
+      this._sendOtpEmail(
+        email,
+        pending.otp,
+        'Your new Snip verification code',
+        'Welcome to Snip! Use the code below to complete your registration.',
+      ),
     ]);
 
     return {
       message: 'A new verification code has been sent to your email',
     };
+  }
+
+  async forgotPassword({ email }: ForgotPasswordDto): Promise<void> {
+    const user = await this.userRepo.findByEmail(email);
+    if (!user) return;
+
+    const otp = generateOtp6Digit();
+
+    await Promise.all([
+      this.redisService.set(
+        REDIS_KEYS.AUTH.PASSWORD_RESET(email),
+        otp,
+        OTP_TTL_SECONDS,
+      ),
+      this.redisService.delete(REDIS_KEYS.AUTH.PASSWORD_RESET_ATTEMPTS(email)),
+      this._sendOtpEmail(
+        email,
+        otp,
+        'Reset your Snip password',
+        'You requested to reset your Snip password. Use the code below to continue.',
+      ),
+    ]);
+  }
+
+  async resetPassword({
+    email,
+    otp,
+    newPassword,
+  }: ResetPasswordDto): Promise<void> {
+    const otpKey = REDIS_KEYS.AUTH.PASSWORD_RESET(email);
+    const attemptsKey = REDIS_KEYS.AUTH.PASSWORD_RESET_ATTEMPTS(email);
+
+    const [attempts, storedOtp] = await Promise.all([
+      this.redisService.incr(attemptsKey, OTP_TTL_SECONDS),
+      this.redisService.get(otpKey),
+    ]);
+
+    if (attempts > MAX_OTP_ATTEMPTS) {
+      await this.redisService.delete(otpKey);
+      throw new HttpException(
+        'Too many failed attempts. Please request a new code.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+    if (!storedOtp) {
+      throw new BadRequestException(
+        'Invalid or expired verification code. Please request a new code.',
+      );
+    }
+    if (storedOtp !== otp) {
+      throw new BadRequestException(
+        `Invalid verification code. ${MAX_OTP_ATTEMPTS - attempts + 1} attempt(s) remaining.`,
+      );
+    }
+
+    const [user, passwordHash] = await Promise.all([
+      this.userRepo.findByEmail(email),
+      hashPassword(newPassword),
+    ]);
+    if (!user) {
+      throw new BadRequestException(
+        'Unable to reset password. Please request a new code.',
+      );
+    }
+
+    await this.userRepo.update(user.id, { passwordHash });
+
+    await Promise.all([
+      this.redisService.delete(otpKey),
+      this.redisService.delete(attemptsKey),
+      this.logoutAll(user.id),
+    ]);
   }
 
   async login(dto: LoginDto) {
@@ -314,22 +425,27 @@ export class AuthService {
     }
   }
 
-  private async _sendOtpEmail(email: string, otp: string, subject: string) {
-    const otpTtlMinutes = OTP_TTL_SECONDS / 60;
+  private async _sendOtpEmail(
+    email: string,
+    otp: string,
+    subject: string,
+    intro: string,
+  ) {
+    const minutes = OTP_TTL_SECONDS / 60;
     await this.emailService.sendEmail({
       to: email,
       subject,
-      text: `Your verification code is: ${otp}. It will expire in ${otpTtlMinutes} minutes.`,
+      text: `${intro} Your code is: ${otp}. It will expire in ${minutes} minutes.`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #e4e4e7; border-radius: 8px;">
-          <h2 style="color: #09090b; margin-top: 0;">Your verification code</h2>
-          <p style="color: #71717a; font-size: 15px;">Welcome to Snip! Use the code below to complete your registration:</p>
+          <h2 style="color: #09090b; margin-top: 0;">${subject}</h2>
+          <p style="color: #71717a; font-size: 15px;">${intro}</p>
           <div style="text-align: center; margin: 28px 0;">
-            <span style="display: inline-block; font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #1e40af; background-color: #eff6ff; padding: 12px 24px; border-radius: 6px; border: 1px dashed #bfdbfe;">
+            <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #ea580c; background-color: #fff7ed; padding: 12px 24px; border-radius: 6px; border: 1px dashed #fed7aa;">
               ${otp}
             </span>
           </div>
-          <p style="color: #71717a; font-size: 13px;">This code will expire in ${otpTtlMinutes} minutes. If you did not create a Snip account, you can safely ignore this email.</p>
+          <p style="color: #71717a; font-size: 13px;">This code will expire in ${minutes} minutes. If you did not request it, you can safely ignore this email.</p>
         </div>
       `,
     });
