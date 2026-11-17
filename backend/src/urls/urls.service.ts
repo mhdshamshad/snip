@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Env } from '../config/env.validation';
 import type { ListUrlsQueryDto } from './dto/list-urls-query.dto';
@@ -30,5 +30,12 @@ export class UrlsService {
       data: data.map((url) => toUrlResponse(url, this.baseUrl)),
       nextCursor,
     };
+  }
+
+  async delete(userId: string, urlId: string): Promise<void> {
+    const deleted = await this.urlRepo.deleteForUser(userId, urlId);
+    if (!deleted) {
+      throw new NotFoundException('URL not found');
+    }
   }
 }

@@ -10,4 +10,5 @@ export interface IUrlRepository {
     userId: string,
     query: ListUrlsQueryDto,
   ): Promise<CursorPaginatedResult<Url>>;
+  deleteForUser(userId: string, urlId: string): Promise<boolean>;
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma, Url } from '@prisma/client';
+import type { Url } from '@prisma/client';
 
 import { PrismaService } from '../../database/prisma.service';
 import { ListUrlsQueryDto, UrlSortBy } from '../dto/list-urls-query.dto';
@@ -39,5 +39,15 @@ export class UrlRepository implements IUrlRepository {
     }
 
     return { data, nextCursor };
+  }
+  async deleteForUser(userId: string, urlId: string): Promise<boolean> {
+    const result = await this.prisma.url.deleteMany({
+      where: {
+        id: urlId,
+        userId,
+      },
+    });
+
+    return result.count > 0;
   }
 }

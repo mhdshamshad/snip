@@ -6,12 +6,14 @@ import { useUrlFilterParams } from '@/hooks/useUrlFilterParams';
 import { handleApiError } from '@/utils/handleApiError';
 import {
   useUrls,
+  useDeleteUrl,
   URL_SORT_OPTIONS,
   type ShortUrl,
   type UrlSortOption,
   UrlListSkeleton,
   UrlList,
 } from '@/features/urls';
+import { stripUrlProtocol } from '@/utils/url-format';
 
 const SORT_OPTIONS = Object.entries(URL_SORT_OPTIONS).map(([value, option]) => ({
   value: value as UrlSortOption,
@@ -31,6 +33,7 @@ type UrlListFilters = Record<string, unknown> & { sort: UrlSortOption };
 export default function UrlListPage() {
   const { search, sort, updateParams } = useUrlFilterParams<UrlListFilters>(URL_FILTERS);
   const [toDelete, setToDelete] = useState<ShortUrl | null>(null);
+  const { mutateAsync: deleteUrl, isPending: isDeletingUrl } = useDeleteUrl();
 
   const {
     data,
@@ -173,21 +176,38 @@ export default function UrlListPage() {
           {sortLabel.toLowerCase()}
         </p>
       )}
-
       <ConfirmDialog
-        isOpen={toDelete !== null}
+        isOpen={!!toDelete}
         onClose={() => setToDelete(null)}
-        onConfirm={() => setToDelete(null)}
-        title="Delete link?"
+        isLoading={isDeletingUrl}
+        onConfirm={async () => {
+          if (!toDelete) {return;}
+
+          await deleteUrl(toDelete.id);
+          setToDelete(null);
+        }}
+        title="Delete this link?"
         description={
-          <>
-            Deleting links is not supported by the backend yet.{' '}
-            {toDelete && <span className="font-medium text-foreground">{toDelete.shortUrl}</span>}{' '}
-            will not be removed.
-          </>
+          <span>
+            <span className="mt-1 block break-all rounded-md bg-muted px-2.5 py-2 font-mono text-xs font-medium text-foreground">
+              {stripUrlProtocol(toDelete?.shortUrl ?? '')}
+            </span>
+
+            <span className="mt-2 block leading-relaxed">
+              This link will stop redirecting immediately. Its{' '}
+              <span className="font-medium text-foreground">
+                {toDelete?.clicks ?? 0} recorded{' '}
+                {(toDelete?.clicks ?? 0) === 1 ? 'click' : 'clicks'}
+              </span>{' '}
+              will also be permanently removed.
+            </span>
+
+            <span className="mt-1 block text-muted-foreground">This action cannot be undone.</span>
+          </span>
         }
-        confirmLabel="Close"
+        confirmLabel="Delete link"
         cancelLabel="Cancel"
+        destructive
       />
     </div>
   );
