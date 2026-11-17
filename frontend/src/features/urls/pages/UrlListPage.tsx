@@ -12,6 +12,7 @@ import {
   type UrlSortOption,
   UrlListSkeleton,
   UrlList,
+  useCreateUrlModalStore,
 } from '@/features/urls';
 import { stripUrlProtocol } from '@/utils/url-format';
 
@@ -33,6 +34,7 @@ type UrlListFilters = Record<string, unknown> & { sort: UrlSortOption };
 export default function UrlListPage() {
   const { search, sort, updateParams } = useUrlFilterParams<UrlListFilters>(URL_FILTERS);
   const [toDelete, setToDelete] = useState<ShortUrl | null>(null);
+  const openCreateUrlModal = useCreateUrlModalStore(s => s.open);
   const { mutateAsync: deleteUrl, isPending: isDeletingUrl } = useDeleteUrl();
 
   const {
@@ -77,6 +79,7 @@ export default function UrlListPage() {
           type="button"
           leftIcon={<Plus className="size-4" />}
           className="h-10 w-full shrink-0 sm:w-auto"
+          onClick={openCreateUrlModal}
         >
           Create link
         </Button>
@@ -181,8 +184,9 @@ export default function UrlListPage() {
         onClose={() => setToDelete(null)}
         isLoading={isDeletingUrl}
         onConfirm={async () => {
-          if (!toDelete) {return;}
-
+          if (!toDelete) {
+            return;
+          }
           await deleteUrl(toDelete.id);
           setToDelete(null);
         }}

@@ -6,6 +6,7 @@ import { useAuthStore } from '@/features/auth';
 import { APP_ROUTES } from '@/constants/app-routes';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
+import { CreateUrlModal } from '@/features/urls/components/CreateUrlModal';
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -35,6 +36,7 @@ export function AppLayout() {
           </Suspense>
         </main>
       </div>
+      <CreateUrlModal />
     </div>
   );
 }

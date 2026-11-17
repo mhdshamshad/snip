@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { Url } from '@prisma/client';
+import { Prisma, type Url } from '@prisma/client';
 
 import { PrismaService } from '../../database/prisma.service';
 import { ListUrlsQueryDto, UrlSortBy } from '../dto/list-urls-query.dto';
@@ -9,6 +9,32 @@ import { CursorPaginatedResult } from '../../shared/types/pagination.types';
 @Injectable()
 export class UrlRepository implements IUrlRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  async create(data: {
+    userId: string;
+    originalUrl: string;
+    shortCode: string;
+  }): Promise<Url | null> {
+    try {
+      return await this.prisma.url.create({ data });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async existsByShortCode(shortCode: string): Promise<boolean> {
+    const url = await this.prisma.url.findUnique({
+      where: { shortCode },
+      select: { id: true },
+    });
+    return url !== null;
+  }
 
   async findManyByUser(
     userId: string,
