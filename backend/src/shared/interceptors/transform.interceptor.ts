@@ -4,6 +4,7 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
+import { REDIRECT_METADATA } from '@nestjs/common/constants';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -16,12 +17,16 @@ export interface ApiResponse<T = unknown> {
 @Injectable()
 export class TransformInterceptor<T> implements NestInterceptor<
   T,
-  ApiResponse<T>
+  ApiResponse<T> | T
 > {
   intercept(
     context: ExecutionContext,
     next: CallHandler,
-  ): Observable<ApiResponse<T>> {
+  ): Observable<ApiResponse<T> | T> {
+    if (Reflect.getMetadata(REDIRECT_METADATA, context.getHandler())) {
+      return next.handle();
+    }
+
     return next.handle().pipe(
       map((data) => {
         let message = 'Success';

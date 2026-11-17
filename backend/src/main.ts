@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
+import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -29,7 +29,9 @@ async function bootstrap() {
   });
 
   // Public redirect route
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', {
+    exclude: [{ path: 'r/:code', method: RequestMethod.GET }],
+  });
 
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(

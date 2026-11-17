@@ -12,6 +12,7 @@ export interface IUrlRepository {
     shortCode: string;
   }): Promise<Url | null>;
   existsByShortCode(shortCode: string): Promise<boolean>;
+  registerClick(shortCode: string): Promise<string | null>;
   findManyByUser(
     userId: string,
     query: ListUrlsQueryDto,

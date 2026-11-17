@@ -36,6 +36,27 @@ export class UrlRepository implements IUrlRepository {
     return url !== null;
   }
 
+  async registerClick(shortCode: string): Promise<string | null> {
+    try {
+      const url = await this.prisma.url.update({
+        where: { shortCode },
+        data: { clicks: { increment: 1 } },
+        select: { originalUrl: true },
+      });
+
+      return url.originalUrl;
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        return null;
+      }
+
+      throw error;
+    }
+  }
+
   async findManyByUser(
     userId: string,
     { search, sortBy, order, limit, cursor }: ListUrlsQueryDto,

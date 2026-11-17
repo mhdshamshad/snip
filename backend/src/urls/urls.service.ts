@@ -78,6 +78,9 @@ export class UrlsService {
       throw new NotFoundException('URL not found');
     }
   }
+  resolve(code: string): Promise<string | null> {
+    return this.urlRepo.registerClick(code);
+  }
   async isAliasAvailable(alias: string): Promise<boolean> {
     if (this.isReserved(alias)) return false;
     return !(await this.urlRepo.existsByShortCode(alias));
