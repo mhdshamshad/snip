@@ -74,6 +74,9 @@ export function CopyButton({
       size={size ?? (showLabel ? 'sm' : 'icon')}
       onClick={onCopy}
       aria-label={copied ? 'Copied' : `${label} ${value}`}
+      leftIcon={
+        copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />
+      }
       className={cn(
         !showLabel && 'size-8 p-0',
         copied && 'text-success border-success/30',
@@ -81,8 +84,7 @@ export function CopyButton({
       )}
       {...props}
     >
-      {copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
-      {showLabel && <span>{copied ? 'Copied' : label}</span>}
+      {showLabel ? (copied ? 'Copied' : label) : null}
     </Button>
   );
 }

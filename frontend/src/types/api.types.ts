@@ -12,3 +12,16 @@ export interface ApiErrorResponse {
   timestamp: string;
   path: string;
 }
+
+export interface CursorPaginatedData<T = unknown> {
+  data: T[];
+  nextCursor: string | null;
+}
+
+export interface CursorPaginatedResponse<T = unknown> {
+  success: true;
+  message: string;
+  data: CursorPaginatedData<T>;
+}
+
+export type SortOrder = 'asc' | 'desc';

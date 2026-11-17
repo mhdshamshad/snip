@@ -29,5 +29,6 @@ model Url {
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
   @@index([userId, createdAt])
+  @@index([userId, clicks])
   @@map("urls")
 }
