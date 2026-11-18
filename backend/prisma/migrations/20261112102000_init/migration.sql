@@ -37,15 +37,10 @@ CREATE TABLE "urls" (
 
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
-CREATE INDEX "sessions_user_id_revoked_at_idx" ON "sessions"("user_id", "revoked_at");
-
-CREATE INDEX "sessions_expires_at_idx" ON "sessions"("expires_at");
-
 CREATE UNIQUE INDEX "urls_short_code_key" ON "urls"("short_code");
 
 CREATE INDEX "urls_user_id_created_at_idx" ON "urls"("user_id", "created_at");
 
-ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
 ALTER TABLE "urls" ADD CONSTRAINT "urls_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+CREATE INDEX "urls_user_id_clicks_idx" ON "urls"("user_id", "clicks");

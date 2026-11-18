@@ -25,9 +25,11 @@ model Url {
   clicks      Int      @default(0)
   userId      String   @map("user_id") @db.Uuid
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastClickedAt DateTime? @map("last_clicked_at") @db.Timestamptz()
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
   @@index([userId, createdAt])
+  @@index([userId, clicks])
   @@map("urls")
 }

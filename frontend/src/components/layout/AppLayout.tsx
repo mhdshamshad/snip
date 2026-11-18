@@ -6,6 +6,7 @@ import { useAuthStore } from '@/features/auth';
 import { APP_ROUTES } from '@/constants/app-routes';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
+import { CreateUrlModal } from '@/features/urls/components/CreateUrlModal';
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -29,12 +30,13 @@ export function AppLayout() {
       <div className="flex min-w-0 flex-1 flex-col transition-all lg:pl-60">
         <Header onMenuClick={() => setMobileOpen(prev => !prev)} />
 
-        <main className="mx-auto w-full max-w-6xl flex-1 overflow-x-hidden px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <main className="w-full flex-1 overflow-x-hidden px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
           <Suspense fallback={<AppLoader label="Loading content" />}>
             <Outlet />
           </Suspense>
         </main>
       </div>
+      <CreateUrlModal />
     </div>
   );
 }

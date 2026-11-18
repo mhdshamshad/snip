@@ -15,6 +15,6 @@ export const AUTH_API = {
 
 export const URL_API = {
   BASE: '/urls',
-  DETAIL: (id: string) => `/urls/${id}`,
-  STATS: (id: string) => `/urls/${id}/stats`,
+  BY_ID: (id: string) => `/urls/${id}`,
+  CHECK_ALIAS: '/urls/check-alias',
 } as const;
