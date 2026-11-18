@@ -35,6 +35,7 @@ import {
   REDIS_KEYS,
 } from '../shared/constants/redis.constants';
 import { EMAIL_SERVICE, type IEmailService } from '../email/email.interface';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 interface PendingRegistration {
   name: string;
@@ -140,7 +141,7 @@ export class AuthService {
 
     const deviceId = randomUUID();
     const [tokens] = await Promise.all([
-      this._createSession(user.id, user.email, deviceId),
+      this._createSession(user.id, deviceId),
       this.redisService.delete(otpKey),
       this.redisService.delete(attemptsKey),
     ]);
@@ -263,7 +264,7 @@ export class AuthService {
     }
 
     const deviceId = randomUUID();
-    const tokens = await this._createSession(user.id, user.email, deviceId);
+    const tokens = await this._createSession(user.id, deviceId);
 
     return {
       ...tokens,
@@ -305,7 +306,7 @@ export class AuthService {
 
     if (user) {
       return {
-        ...(await this._createSession(user.id, user.email, deviceId)),
+        ...(await this._createSession(user.id, deviceId)),
         user: toUserResponse(user),
       };
     }
@@ -317,11 +318,7 @@ export class AuthService {
       passwordHash,
     });
 
-    const tokens = await this._createSession(
-      newUser.id,
-      newUser.email,
-      deviceId,
-    );
+    const tokens = await this._createSession(newUser.id, deviceId);
     return {
       ...tokens,
       user: toUserResponse(newUser),
@@ -360,7 +357,7 @@ export class AuthService {
     }
 
     const [tokens] = await Promise.all([
-      this._createSession(user.id, user.email, deviceId),
+      this._createSession(user.id, deviceId),
       this._blacklistAccessToken(oldAccessToken),
     ]);
 
@@ -424,12 +421,53 @@ export class AuthService {
     return toUserResponse(user);
   }
 
+  async changePassword(
+    userId: string,
+    deviceId: string,
+    { currentPassword, newPassword }: ChangePasswordDto,
+  ) {
+    const user = await this.userRepo.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!(await comparePassword(currentPassword, user.passwordHash))) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+    const invalidationCutoff = Math.floor(Date.now() / 1000) + 1;
+
+    const [passwordHash] = await Promise.all([
+      hashPassword(newPassword),
+      this.redisService.set(
+        REDIS_KEYS.AUTH.USER_LOGGED_OUT_AT(userId),
+        invalidationCutoff.toString(),
+        this.refreshTtl,
+      ),
+    ]);
+    await this.userRepo.update(userId, { passwordHash });
+    const { accessToken, refreshToken } = await this._createSession(
+      userId,
+      deviceId,
+      invalidationCutoff,
+    );
+
+    return {
+      accessToken,
+      refreshToken,
+      user: toUserResponse(user),
+    };
+  }
+
   private async _createSession(
     userId: string,
-    email: string,
     deviceId: string,
+    issuedAt?: number,
   ) {
-    const payload = { sub: userId, email, deviceId };
+    const payload = {
+      sub: userId,
+      deviceId,
+      ...(issuedAt === undefined ? {} : { iat: issuedAt }),
+    };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
