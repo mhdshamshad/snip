@@ -1,10 +1,18 @@
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
+
+const SIZES = {
+  sm: { box: 'size-5 rounded text-[10px]', img: 'size-3' },
+  md: { box: 'size-9 rounded-lg text-sm', img: 'size-5' },
+  lg: { box: 'size-11 rounded-lg text-base', img: 'size-6' },
+} as const;
 
 interface UrlSiteIconProps {
   originalUrl: string;
+  size?: keyof typeof SIZES;
 }
 
-export function UrlSiteIcon({ originalUrl }: UrlSiteIconProps) {
+export function UrlSiteIcon({ originalUrl, size = 'md' }: UrlSiteIconProps) {
   const [failed, setFailed] = useState(false);
 
   let faviconUrl: string | undefined;
@@ -21,9 +29,14 @@ export function UrlSiteIcon({ originalUrl }: UrlSiteIconProps) {
     faviconUrl = undefined;
   }
 
+  const s = SIZES[size];
+
   return (
     <span
-      className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-card text-sm font-semibold text-muted-foreground"
+      className={cn(
+        'flex shrink-0 items-center justify-center overflow-hidden border border-border bg-card font-semibold text-muted-foreground',
+        s.box
+      )}
       role="img"
       aria-label={`${initial || 'Link'} site icon`}
     >
@@ -33,7 +46,7 @@ export function UrlSiteIcon({ originalUrl }: UrlSiteIconProps) {
           alt=""
           loading="lazy"
           referrerPolicy="no-referrer"
-          className="size-5 object-contain"
+          className={cn('object-contain', s.img)}
           onError={() => setFailed(true)}
         />
       ) : (

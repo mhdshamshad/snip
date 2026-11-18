@@ -40,7 +40,7 @@ export class UrlRepository implements IUrlRepository {
     try {
       const url = await this.prisma.url.update({
         where: { shortCode },
-        data: { clicks: { increment: 1 } },
+        data: { clicks: { increment: 1 }, lastClickedAt: new Date() },
         select: { originalUrl: true },
       });
 
@@ -87,6 +87,7 @@ export class UrlRepository implements IUrlRepository {
 
     return { data, nextCursor };
   }
+
   async deleteForUser(userId: string, urlId: string): Promise<boolean> {
     const result = await this.prisma.url.deleteMany({
       where: {
@@ -96,5 +97,8 @@ export class UrlRepository implements IUrlRepository {
     });
 
     return result.count > 0;
+  }
+  findOwnedById(id: string, userId: string): Promise<Url | null> {
+    return this.prisma.url.findFirst({ where: { id, userId } });
   }
 }

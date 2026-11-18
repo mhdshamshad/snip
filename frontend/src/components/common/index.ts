@@ -12,3 +12,4 @@ export * from './EmptyState';
 export * from './ErrorState';
 export * from './CopyButton';
 export * from './Logo';
+export * from './Skeleton';

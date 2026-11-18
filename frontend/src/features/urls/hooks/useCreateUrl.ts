@@ -1,7 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { CreateUrlFormType } from '../validation/url.schema';
-import { urlsApi } from '../api/urls.api';
-import { urlKeys } from '../api/urls.keys';
+import { urlKeys, urlsApi, type CreateUrlFormType } from '@/features/urls';
 
 export function useCreateUrl() {
   const queryClient = useQueryClient();

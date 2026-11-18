@@ -6,7 +6,8 @@ export interface ShortUrl {
   originalUrl: string;
   shortUrl: string;
   clicks: number;
-  createdAt: string;
+  lastClickedAt: Date;
+  createdAt: Date;
 }
 
 export type UrlSortBy = 'createdAt' | 'clicks';

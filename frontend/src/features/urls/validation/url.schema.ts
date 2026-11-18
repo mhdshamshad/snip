@@ -6,11 +6,15 @@ export const createUrlSchema = z.object({
     .string()
     .trim()
     .min(1, 'Destination URL is required')
-    .url('Enter a valid URL')
-    .refine(
-      value => ['http:', 'https:'].includes(new URL(value).protocol),
-      'Only HTTP and HTTPS URLs are supported'
-    ),
+    .max(2048, 'URL is too long')
+    .url("This doesn't look like a valid URL.")
+    .refine(value => {
+      try {
+        return ['http:', 'https:'].includes(new URL(value).protocol);
+      } catch {
+        return true;
+      }
+    }, 'Only HTTP and HTTPS URLs are supported'),
   customAlias: z
     .string()
     .trim()

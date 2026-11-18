@@ -1,20 +1,19 @@
 import { useCallback, useState } from 'react';
 import { ArrowUpDown, Plus } from 'lucide-react';
 
-import { Button, ConfirmDialog, EmptyState, ErrorState, SearchInput } from '@/components/common';
+import { Button, EmptyState, ErrorState, SearchInput } from '@/components/common';
 import { useUrlFilterParams } from '@/hooks/useUrlFilterParams';
 import { handleApiError } from '@/utils/handleApiError';
 import {
   useUrls,
-  useDeleteUrl,
   URL_SORT_OPTIONS,
   type ShortUrl,
   type UrlSortOption,
   UrlListSkeleton,
   UrlList,
   useCreateUrlModalStore,
+  DeleteUrlModal,
 } from '@/features/urls';
-import { stripUrlProtocol } from '@/utils/url-format';
 
 const SORT_OPTIONS = Object.entries(URL_SORT_OPTIONS).map(([value, option]) => ({
   value: value as UrlSortOption,
@@ -35,7 +34,6 @@ export default function UrlListPage() {
   const { search, sort, updateParams } = useUrlFilterParams<UrlListFilters>(URL_FILTERS);
   const [toDelete, setToDelete] = useState<ShortUrl | null>(null);
   const openCreateUrlModal = useCreateUrlModalStore(s => s.open);
-  const { mutateAsync: deleteUrl, isPending: isDeletingUrl } = useDeleteUrl();
 
   const {
     data,
@@ -85,15 +83,15 @@ export default function UrlListPage() {
         </Button>
       </div>
 
-      <section className="overflow-hidden rounded-xl border border-border bg-card shadow-xs">
-        <div className="flex flex-col gap-3 border-b-2 border-border bg-muted/40 p-3 sm:flex-row sm:items-center sm:p-4">
+      <section className="rounded-xl border border-border bg-card shadow-xs">
+        <div className="flex flex-col gap-3 rounded-t-xl border-b-2 border-border bg-muted/40 p-3 sm:flex-row sm:items-center sm:p-4">
           <SearchInput
             value={search}
             onChange={handleSearchChange}
             placeholder="Search by destination or short link..."
             aria-label="Search links"
             className="min-w-0 flex-1"
-            loading={isFetching && !isFetchingNextPage}
+            loading={isSearching && isFetching && !isFetchingNextPage}
           />
           <label className="relative block sm:w-48 sm:shrink-0">
             <span className="sr-only">Sort links</span>
@@ -179,40 +177,7 @@ export default function UrlListPage() {
           {sortLabel.toLowerCase()}
         </p>
       )}
-      <ConfirmDialog
-        isOpen={!!toDelete}
-        onClose={() => setToDelete(null)}
-        isLoading={isDeletingUrl}
-        onConfirm={async () => {
-          if (!toDelete) {
-            return;
-          }
-          await deleteUrl(toDelete.id);
-          setToDelete(null);
-        }}
-        title="Delete this link?"
-        description={
-          <span>
-            <span className="mt-1 block break-all rounded-md bg-muted px-2.5 py-2 font-mono text-xs font-medium text-foreground">
-              {stripUrlProtocol(toDelete?.shortUrl ?? '')}
-            </span>
-
-            <span className="mt-2 block leading-relaxed">
-              This link will stop redirecting immediately. Its{' '}
-              <span className="font-medium text-foreground">
-                {toDelete?.clicks ?? 0} recorded{' '}
-                {(toDelete?.clicks ?? 0) === 1 ? 'click' : 'clicks'}
-              </span>{' '}
-              will also be permanently removed.
-            </span>
-
-            <span className="mt-1 block text-muted-foreground">This action cannot be undone.</span>
-          </span>
-        }
-        confirmLabel="Delete link"
-        cancelLabel="Cancel"
-        destructive
-      />
+      <DeleteUrlModal url={toDelete} onClose={() => setToDelete(null)} />
     </div>
   );
 }

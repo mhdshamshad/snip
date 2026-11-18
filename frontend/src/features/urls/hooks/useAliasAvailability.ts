@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { urlKeys } from '../api/urls.keys';
-import { urlsApi } from '../api/urls.api';
+import { urlKeys, urlsApi } from '@/features/urls';
 
 export function useAliasAvailability(alias: string, enabled: boolean) {
   return useQuery({

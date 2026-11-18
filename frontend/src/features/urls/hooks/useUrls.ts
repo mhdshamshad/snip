@@ -1,9 +1,6 @@
-import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
-import { URL_SORT_OPTIONS } from '../constants/url.constants';
-import { urlsApi } from '../api/urls.api';
-import { urlKeys } from '../api/urls.keys';
-import type { UrlSortOption } from '../types/url.types';
+import { URL_SORT_OPTIONS, urlKeys, urlsApi, type UrlSortOption } from '@/features/urls';
 
 interface UseUrlsArgs {
   search: string;
@@ -28,5 +25,14 @@ export function useUrls({ search, sort }: UseUrlsArgs) {
     initialPageParam: null as string | null,
     getNextPageParam: last => last.nextCursor,
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useUrlDetail(id: string) {
+  return useQuery({
+    queryKey: urlKeys.detail(id),
+    queryFn: () => urlsApi.getById(id),
+    enabled: Boolean(id),
+    retry: false,
   });
 }

@@ -24,4 +24,8 @@ export const urlsApi = {
     const res = await api.post<ApiResponse<ShortUrl>>(URL_API.BASE, data);
     return res.data;
   },
+  getById: async (id: string): Promise<ShortUrl> => {
+    const res = await api.get<ApiResponse<ShortUrl>>(URL_API.BY_ID(id));
+    return res.data.data;
+  },
 };

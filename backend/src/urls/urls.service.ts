@@ -86,6 +86,12 @@ export class UrlsService {
     return !(await this.urlRepo.existsByShortCode(alias));
   }
 
+  async getById(userId: string, id: string): Promise<UrlResponse> {
+    const url = await this.urlRepo.findOwnedById(id, userId);
+    if (!url) throw new NotFoundException('Link not found');
+    return toUrlResponse(url, this.baseUrl);
+  }
+
   private isReserved(alias: string): boolean {
     return RESERVED_ALIASES.has(alias.toLowerCase());
   }

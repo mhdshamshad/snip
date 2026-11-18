@@ -107,10 +107,13 @@ export function CreateUrlModal() {
             placeholder="my-custom-link"
             autoComplete="off"
             leftIcon={<Link2 size={16} />}
-            error={errors.customAlias?.message}
+            error={
+              errors.customAlias?.message ??
+              (status === 'taken' ? 'This alias is already taken.' : undefined)
+            }
             {...register('customAlias')}
           />
-          {status !== 'idle' && !errors.customAlias && (
+          {status !== 'idle' && status !== 'taken' && !errors.customAlias && (
             <p className="mt-1.5 flex items-center gap-1.5 text-xs">
               {status === 'checking' && (
                 <>
@@ -121,9 +124,6 @@ export function CreateUrlModal() {
                 <span className="flex items-center gap-1.5 text-success">
                   <Check className="size-3.5" /> Alias is available
                 </span>
-              )}
-              {status === 'taken' && (
-                <span className="text-destructive">This alias is already taken.</span>
               )}
               {status === 'error' && (
                 <span className="text-muted-foreground">Couldn't check availability.</span>

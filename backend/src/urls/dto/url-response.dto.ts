@@ -6,7 +6,15 @@ export type UrlResponse = Omit<Url, 'shortCode' | 'updatedAt' | 'userId'> & {
 };
 
 export function toUrlResponse(
-  url: Pick<Url, 'id' | 'shortCode' | 'originalUrl' | 'clicks' | 'createdAt'>,
+  url: Pick<
+    Url,
+    | 'id'
+    | 'shortCode'
+    | 'originalUrl'
+    | 'clicks'
+    | 'lastClickedAt'
+    | 'createdAt'
+  >,
   baseUrl: string,
 ): UrlResponse {
   return {
@@ -15,6 +23,7 @@ export function toUrlResponse(
     originalUrl: url.originalUrl,
     shortUrl: `${baseUrl}/r/${url.shortCode}`,
     clicks: url.clicks,
+    lastClickedAt: url.lastClickedAt,
     createdAt: url.createdAt,
   };
 }

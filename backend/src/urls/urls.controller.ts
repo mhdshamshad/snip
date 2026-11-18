@@ -55,4 +55,12 @@ export class UrlsController {
     await this.urlsService.delete(userId, urlId);
     return { message: 'Link deleted successfully' };
   }
+
+  @Get(':id')
+  getById(
+    @CurrentUser('id') userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.urlsService.getById(userId, id);
+  }
 }

@@ -1,9 +1,9 @@
 import { BarChart3, MoreHorizontal, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { APP_ROUTES } from '@/constants/app-routes';
 import type { ShortUrl } from '@/features/urls';
 import { useDismissable } from '@/hooks/useDismissable';
+import { APP_ROUTES } from '@/constants/app-routes';
 
 interface UrlRowActionsProps {
   url: ShortUrl;
@@ -36,7 +36,7 @@ export function UrlRowActions({ url, onDelete }: UrlRowActionsProps) {
             to={APP_ROUTES.URL_DETAILS.replace(':id', encodeURIComponent(url.id))}
             state={{ url }}
             onClick={close}
-            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent text-foreground"
+            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-accent"
           >
             <BarChart3 className="size-4 text-muted-foreground" />
             View details
