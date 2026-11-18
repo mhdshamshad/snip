@@ -16,6 +16,7 @@ const VerifyOtpPage = lazy(() => import('@/features/auth/pages/VerifyOtpPage'));
 const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage'));
 const UrlListPage = lazy(() => import('@/features/urls/pages/UrlListPage'));
 const UrlDetailsPage = lazy(() => import('@/features/urls/pages/UrlDetailsPage'));
+const AccountPage = lazy(() => import('@/features/account/pages/AccountPage'));
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="dashboard" element={<> Hello </>} />
           <Route path={APP_ROUTES.URLS} element={<UrlListPage />} />
           <Route path={APP_ROUTES.URL_DETAILS} element={<UrlDetailsPage />} />
+          <Route path={APP_ROUTES.SETTINGS} element={<AccountPage />} />
         </Route>
 
         <Route path={APP_ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
