@@ -3,8 +3,7 @@ import { useUpdateName } from '../hooks/useUpdateName';
 import { nameSchema, type NameFormType } from '../validation/account.schema';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Panel, PanelHeader } from '@/features/urls';
-import { Button, FormField, Input } from '@/components/common';
+import { Button, FormField, Input, Panel, PanelHeader } from '@/components/common';
 import { cn } from '@/lib/utils';
 
 export function ChangeNameForm({ user }: { user: AuthUser }) {

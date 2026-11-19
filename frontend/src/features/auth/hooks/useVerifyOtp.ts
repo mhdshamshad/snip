@@ -17,7 +17,7 @@ export function useVerifyOtp() {
       useAuthStore.getState().setCredentials(user, accessToken);
       queryClient.setQueryData(authKeys.profile(), user);
       toast.success(response.message);
-      navigate(APP_ROUTES.DASHBOARD, { replace: true });
+      navigate(APP_ROUTES.URLS, { replace: true });
     },
   });
 }

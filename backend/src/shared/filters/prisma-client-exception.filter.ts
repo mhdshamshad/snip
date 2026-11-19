@@ -18,38 +18,40 @@ export class PrismaClientExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Database error occurred';
-    let error = 'Database Error';
+    let message = 'Something went wrong. Please try again later.';
+    let error = 'Internal Server Error';
 
     switch (exception.code) {
       case 'P2002': {
         status = HttpStatus.CONFLICT;
-        const target = (exception.meta?.target as string[])?.join(', ');
-        message = target
-          ? `A record with this ${target} already exists`
-          : 'Resource already exists';
+        message = 'This information is already in use.';
         error = 'Conflict';
         break;
       }
+
       case 'P2025': {
         status = HttpStatus.NOT_FOUND;
-        message = (exception.meta?.cause as string) || 'Record not found';
+        message = 'The requested resource was not found.';
         error = 'Not Found';
         break;
       }
+
       case 'P2003': {
         status = HttpStatus.BAD_REQUEST;
-        message = 'Foreign key constraint failed';
+        message =
+          'This operation cannot be completed because related data is unavailable.';
         error = 'Bad Request';
         break;
       }
-      default: {
-        this.logger.error(
-          `Prisma error [${exception.code}]: ${exception.message}`,
-        );
+
+      default:
         break;
-      }
     }
+
+    this.logger.error(
+      `Prisma error [${exception.code}] on ${request.method} ${request.url}: ${exception.message}`,
+      exception.stack,
+    );
 
     response.status(status).json({
       success: false,

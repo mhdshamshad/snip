@@ -2,13 +2,11 @@ import { Link, Navigate } from 'react-router-dom';
 import {
   ArrowDown,
   ArrowRight,
-  BarChart3,
   Check,
   ClipboardCopy,
   Copy,
   Globe,
   Lock,
-  MousePointerClick,
   PenLine,
   QrCode,
   Search,
@@ -28,9 +26,9 @@ const FEATURES = [
     body: 'Pick memorable paths like /spring-launch, with instant availability checks.',
   },
   {
-    icon: BarChart3,
-    title: 'Click analytics',
-    body: 'See total clicks, daily activity and which links perform best.',
+    icon: ArrowRight,
+    title: 'Fast redirects',
+    body: 'Send visitors directly to the destination with a short, easy-to-share link.',
   },
   {
     icon: QrCode,
@@ -40,12 +38,12 @@ const FEATURES = [
   {
     icon: Search,
     title: 'Search & sort',
-    body: 'Find any link by destination or alias. Sort by newest, oldest or clicks.',
+    body: 'Find any link by destination or alias. Sort by newest or oldest.',
   },
   {
     icon: Lock,
     title: 'Private by account',
-    body: "Your links are yours. Other accounts can't see or delete them.",
+    body: 'Only you can view and manage your saved links in your account.',
   },
   {
     icon: ClipboardCopy,
@@ -66,23 +64,23 @@ const STEPS = [
     body: 'Add any http or https URL and, if you like, a custom alias.',
   },
   {
-    icon: MousePointerClick,
-    title: 'Share and track',
-    body: 'Copy the short link or QR code and watch clicks come in.',
+    icon: ClipboardCopy,
+    title: 'Share anywhere',
+    body: 'Copy your short link or share its QR code wherever your audience is.',
   },
 ];
 
 const PREVIEW_ROWS = [
-  { code: 'launch-kit', domain: 'figma.com', clicks: '412', letter: 'F' },
-  { code: 'roadmap', domain: 'notion.so', clicks: '193', letter: 'N' },
-  { code: 'Hq7xTb', domain: 'github.com', clicks: '268', letter: 'G' },
+  { code: 'launch-kit', domain: 'figma.com', letter: 'F' },
+  { code: 'roadmap', domain: 'notion.so', letter: 'N' },
+  { code: 'Hq7xTb', domain: 'github.com', letter: 'G' },
 ];
 
 export default function HomePage() {
   const { isAuthenticated } = useAuthStore();
 
   if (isAuthenticated) {
-    return <Navigate to={APP_ROUTES.DASHBOARD} replace />;
+    return <Navigate to={APP_ROUTES.URLS} replace />;
   }
 
   return (
@@ -102,8 +100,8 @@ export default function HomePage() {
               cleanly managed.
             </h1>
             <p className="mt-5 max-w-md text-base leading-relaxed text-muted-foreground sm:text-[17px]">
-              Snip turns long, messy URLs into short links you can share anywhere, then shows you
-              how each one performs.
+              Snip turns long, messy URLs into short links that are easy to share and manage in one
+              place.
             </p>
             <div className="mt-8 flex flex-col gap-2.5 sm:flex-row">
               <Link to={APP_ROUTES.REGISTER}>
@@ -141,14 +139,18 @@ export default function HomePage() {
               </h2>
               <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
                 Each short link is a unique code mapped to your original URL. When someone opens it,
-                Snip looks up the code, counts the click and sends them straight to the destination.
+                Snip looks up the code and sends them straight to the destination.
               </p>
             </div>
 
             <div className="mt-10 grid items-stretch gap-3 md:grid-cols-[1fr_auto_1fr_auto_1fr]">
-              <FlowCard label="Visitor opens" value="snip.app/r/aB92xK" />
+              <FlowCard label="Visitor opens" value="snip.app/aB92xK" />
               <FlowArrow />
-              <FlowCard label="Snip looks up the code" value="aB92xK → +1 click" icon={Server} />
+              <FlowCard
+                label="Snip looks up the code"
+                value="aB92xK → destination found"
+                icon={Server}
+              />
               <FlowArrow />
               <FlowCard label="Redirects to" value="example.com/products/electronics/mobile" />
             </div>
@@ -274,7 +276,7 @@ function ProductPreview() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate font-mono text-sm font-medium text-foreground">
-                snip.app/r/launch-kit
+                snip.app/launch-kit
               </p>
               <p className="flex items-center gap-1 text-[11px] text-success font-medium">
                 <Check className="size-3" /> Ready to share
@@ -300,8 +302,8 @@ function ProductPreview() {
                   <Globe className="size-3" /> {r.domain}
                 </p>
               </div>
-              <span className="inline-flex items-center gap-1 font-mono text-xs font-medium text-foreground">
-                <MousePointerClick className="size-3 text-muted-foreground" /> {r.clicks}
+              <span className="inline-flex size-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground">
+                <QrCode className="size-3.5" />
               </span>
             </div>
           ))}

@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Link2Off, MousePointerClick, Timer, Trash2 } from 'lucide-react';
 
-import { Button, CopyButton, Skeleton } from '@/components/common';
+import { Button, CopyButton, Panel, PanelHeader, Skeleton } from '@/components/common';
 import { APP_ROUTES } from '@/constants/app-routes';
 import {
   formatDateTime,
@@ -14,8 +14,6 @@ import {
 import {
   DeleteUrlModal,
   OpenDestinationLink,
-  Panel,
-  PanelHeader,
   QrCodePanel,
   UrlSiteIcon,
   useUrlDetail,

@@ -4,8 +4,7 @@ import {
   type ChangePasswordFormType,
 } from '../validation/password-change.schema';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Panel, PanelHeader } from '@/features/urls';
-import { Button, FormField, PasswordInput } from '@/components/common';
+import { Button, FormField, Panel, PanelHeader, PasswordInput } from '@/components/common';
 import { useChangePassword } from '../hooks/useChangePassword';
 import { cn } from '@/lib/utils';
 

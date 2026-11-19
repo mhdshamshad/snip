@@ -1,10 +1,12 @@
-import { LayoutGrid, Link2, Settings, X } from 'lucide-react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { LayoutGrid, Link2, Plus, Settings, X } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 
 import { Logo } from '@/components/common/Logo';
 import { APP_ROUTES } from '@/constants/app-routes';
 import { cn } from '@/lib/utils';
 import { UserMenu } from './UserMenu';
+import { Button } from '../common';
+import { useCreateUrlModalStore } from '@/features/urls';
 
 interface NavItem {
   to: string;
@@ -14,7 +16,6 @@ interface NavItem {
 }
 
 const DASHBOARD_NAV_ITEMS: readonly NavItem[] = [
-  { to: APP_ROUTES.DASHBOARD, label: 'Overview', icon: LayoutGrid, end: true },
   { to: APP_ROUTES.URLS, label: 'My URLs', icon: Link2 },
   { to: APP_ROUTES.SETTINGS, label: 'Settings', icon: Settings },
 ];
@@ -26,8 +27,7 @@ export interface SidebarProps {
 }
 
 export function Sidebar({ open = false, onClose, className }: SidebarProps) {
-  const location = useLocation();
-
+  const openCreateUrlModal = useCreateUrlModalStore(s => s.open);
   return (
     <aside
       className={cn(
@@ -37,59 +37,74 @@ export function Sidebar({ open = false, onClose, className }: SidebarProps) {
         className
       )}
     >
-      <div className="flex h-14 items-center justify-between border-b border-border/50 px-4">
-        <Logo to={APP_ROUTES.DASHBOARD} />
+      {/* Header */}
+      <div className="flex h-14 items-center justify-between px-4">
+        <Logo to={APP_ROUTES.URLS} />
+
         <button
           type="button"
           onClick={onClose}
           aria-label="Close menu"
-          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:hidden"
         >
           <X className="size-4" />
         </button>
       </div>
 
-      <div className="mt-4 flex-1 overflow-y-auto px-3">
-        <p className="mb-2 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+      {/* Create Link */}
+      <div className="px-3 pt-1">
+        <Button
+          isFullWidth
+          size="md"
+          leftIcon={<Plus className="size-4" />}
+          className="h-9 justify-start gap-2 px-3 text-[13px]"
+          onClick={openCreateUrlModal}
+        >
+          New link
+        </Button>
+      </div>
+
+      {/* Navigation */}
+      <div className="mt-5 flex-1 overflow-y-auto px-3">
+        <p className="mb-1.5 px-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">
           Workspace
         </p>
 
-        <nav aria-label="Dashboard navigation" className="space-y-1">
-          {DASHBOARD_NAV_ITEMS.map(item => {
-            const isActive = item.end
-              ? location.pathname === item.to || location.pathname === `${item.to}/`
-              : location.pathname.startsWith(item.to);
+        <nav aria-label="Dashboard navigation" className="space-y-0.5">
+          {DASHBOARD_NAV_ITEMS.map(item => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              onClick={onClose}
+              className={({ isActive }) =>
+                cn(
+                  'group flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[13px] font-medium text-muted-foreground transition-[color,background-color,box-shadow] duration-120 hover:bg-accent hover:text-foreground active:bg-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30',
+                  isActive && 'bg-card text-foreground shadow-sm ring-1 ring-border hover:bg-card'
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <item.icon
+                    className={cn(
+                      'size-4 transition-colors duration-120',
+                      isActive
+                        ? 'text-foreground'
+                        : 'text-muted-foreground group-hover:text-foreground'
+                    )}
+                    strokeWidth={1.85}
+                  />
 
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                onClick={onClose}
-                className={cn(
-                  'group flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  isActive
-                    ? 'border border-border/80 bg-card text-foreground shadow-xs'
-                    : 'text-muted-foreground hover:bg-card/60 hover:text-foreground'
-                )}
-              >
-                <item.icon
-                  className={cn(
-                    'size-4 transition-colors',
-                    isActive
-                      ? 'text-foreground'
-                      : 'text-muted-foreground group-hover:text-foreground'
-                  )}
-                  strokeWidth={1.85}
-                />
-                <span>{item.label}</span>
-              </NavLink>
-            );
-          })}
+                  <span>{item.label}</span>
+                </>
+              )}
+            </NavLink>
+          ))}
         </nav>
       </div>
 
-      <div className="border-t border-border/50 p-3">
+      <div className="space-y-2 p-3">
         <UserMenu variant="sidebar" />
       </div>
     </aside>

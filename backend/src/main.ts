@@ -1,4 +1,4 @@
-import { RequestMethod, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -8,9 +8,11 @@ import { TransformInterceptor } from './shared/interceptors/transform.intercepto
 import { AllExceptionsFilter } from './shared/filters/http-exception.filter';
 import { PrismaClientExceptionFilter } from './shared/filters/prisma-client-exception.filter';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.use(helmet());
   const configService = app.get<ConfigService<Env, true>>(ConfigService);
 
   const nodeEnv = configService.getOrThrow('NODE_ENV', { infer: true });
@@ -28,10 +30,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Public redirect route
-  app.setGlobalPrefix('api', {
-    exclude: [{ path: 'r/:code', method: RequestMethod.GET }],
-  });
+  app.setGlobalPrefix('api');
 
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(

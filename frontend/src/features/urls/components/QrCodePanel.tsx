@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Button } from '@/components/common';
+import { Button, Panel, PanelHeader } from '@/components/common';
 import { cn } from '@/lib/utils';
-import { Panel, PanelHeader } from './Panel';
 import { stripUrlProtocol } from '@/utils/format';
 
 const COLORS = [
@@ -96,7 +95,7 @@ export function QrCodePanel({ value, code }: { value: string; code: string }) {
     <Panel>
       <PanelHeader
         title="QR code"
-        description="Scans open the short link, so clicks are counted."
+        description="Scanning opens the short link and records a click."
       />
 
       <div className="space-y-5 p-4 sm:p-5">

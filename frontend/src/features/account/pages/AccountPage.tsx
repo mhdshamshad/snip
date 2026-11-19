@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { LogOut, MonitorSmartphone } from 'lucide-react';
 
-import { Button, ConfirmDialog } from '@/components/common';
+import { Button, ConfirmDialog, Panel, PanelHeader } from '@/components/common';
 import { useLogout, useLogoutAll, useAuthStore, type AuthUser } from '@/features/auth';
-import { Panel, PanelHeader } from '@/features/urls';
 
 import { ChangeEmailForm } from '../components/ChangeEmailForm';
 import { ChangePasswordForm } from '../components/ChangePasswordForm';

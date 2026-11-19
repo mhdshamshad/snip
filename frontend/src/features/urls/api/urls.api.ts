@@ -28,4 +28,8 @@ export const urlsApi = {
     const res = await api.get<ApiResponse<ShortUrl>>(URL_API.BY_ID(id));
     return res.data.data;
   },
+  resolve: async (code: string): Promise<string> => {
+    const res = await api.get<ApiResponse<{ originalUrl: string }>>(URL_API.RESOLVE(code));
+    return res.data.data.originalUrl;
+  },
 };

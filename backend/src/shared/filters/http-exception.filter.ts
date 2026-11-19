@@ -32,6 +32,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message = (resObj.message as string | string[]) ?? message;
         error = (resObj.error as string) ?? exception.name;
       }
+
+      if (
+        status === HttpStatus.TOO_MANY_REQUESTS &&
+        typeof message === 'string' &&
+        /^(throttlerexception:\s*)?too many requests$/i.test(message.trim())
+      ) {
+        message =
+          "You're doing that too often. Please wait a minute and try again.";
+      }
     } else if (exception instanceof Error) {
       this.logger.error(
         `Unhandled Exception: ${exception.message}`,

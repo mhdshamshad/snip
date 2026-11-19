@@ -8,7 +8,7 @@ import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { CreateUrlModal } from '@/features/urls/components/CreateUrlModal';
 
-export function AppLayout() {
+export function ProtectedLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const { isAuthenticated } = useAuthStore();

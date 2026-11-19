@@ -32,6 +32,7 @@ import { RedisService } from '../redis/redis.service';
 import { toUserResponse, UserResponse } from '../users/dto/user-response.dto';
 import {
   EMAIL_CHANGE_WINDOW_SECONDS,
+  OtpPurpose,
   OTP_TTL_SECONDS,
   REDIS_KEYS,
 } from '../shared/constants/redis.constants';
@@ -101,17 +102,22 @@ export class AuthService {
 
     await Promise.all([
       this.redisService.set(
-        REDIS_KEYS.AUTH.REGISTER_OTP(email),
+        REDIS_KEYS.AUTH.OTP(OtpPurpose.REGISTER, email),
         JSON.stringify(pendingData),
         OTP_TTL_SECONDS,
       ),
-      this.redisService.delete(REDIS_KEYS.AUTH.REGISTER_OTP_ATTEMPTS(email)),
+      this.redisService.delete(
+        REDIS_KEYS.AUTH.OTP_ATTEMPTS(OtpPurpose.REGISTER, email),
+      ),
     ]);
   }
 
   async verifyOtp({ email, otp }: VerifyOtpDto) {
-    const otpKey = REDIS_KEYS.AUTH.REGISTER_OTP(email);
-    const attemptsKey = REDIS_KEYS.AUTH.REGISTER_OTP_ATTEMPTS(email);
+    const otpKey = REDIS_KEYS.AUTH.OTP(OtpPurpose.REGISTER, email);
+    const attemptsKey = REDIS_KEYS.AUTH.OTP_ATTEMPTS(
+      OtpPurpose.REGISTER,
+      email,
+    );
 
     const [attempts, pending] = await Promise.all([
       this.redisService.incr(attemptsKey, OTP_TTL_SECONDS),
@@ -174,11 +180,13 @@ export class AuthService {
 
     await Promise.all([
       this.redisService.set(
-        REDIS_KEYS.AUTH.REGISTER_OTP(email),
+        REDIS_KEYS.AUTH.OTP(OtpPurpose.REGISTER, email),
         JSON.stringify(pending),
         OTP_TTL_SECONDS,
       ),
-      this.redisService.delete(REDIS_KEYS.AUTH.REGISTER_OTP_ATTEMPTS(email)),
+      this.redisService.delete(
+        REDIS_KEYS.AUTH.OTP_ATTEMPTS(OtpPurpose.REGISTER, email),
+      ),
       this._sendOtpEmail(
         email,
         pending.otp,
@@ -200,11 +208,13 @@ export class AuthService {
 
     await Promise.all([
       this.redisService.set(
-        REDIS_KEYS.AUTH.PASSWORD_RESET(email),
+        REDIS_KEYS.AUTH.OTP(OtpPurpose.PASSWORD_RESET, email),
         otp,
         OTP_TTL_SECONDS,
       ),
-      this.redisService.delete(REDIS_KEYS.AUTH.PASSWORD_RESET_ATTEMPTS(email)),
+      this.redisService.delete(
+        REDIS_KEYS.AUTH.OTP_ATTEMPTS(OtpPurpose.PASSWORD_RESET, email),
+      ),
       this._sendOtpEmail(
         email,
         otp,
@@ -219,8 +229,11 @@ export class AuthService {
     otp,
     newPassword,
   }: ResetPasswordDto): Promise<void> {
-    const otpKey = REDIS_KEYS.AUTH.PASSWORD_RESET(email);
-    const attemptsKey = REDIS_KEYS.AUTH.PASSWORD_RESET_ATTEMPTS(email);
+    const otpKey = REDIS_KEYS.AUTH.OTP(OtpPurpose.PASSWORD_RESET, email);
+    const attemptsKey = REDIS_KEYS.AUTH.OTP_ATTEMPTS(
+      OtpPurpose.PASSWORD_RESET,
+      email,
+    );
 
     const [attempts, storedOtp] = await Promise.all([
       this.redisService.incr(attemptsKey, OTP_TTL_SECONDS),
@@ -496,12 +509,12 @@ export class AuthService {
 
     await Promise.all([
       this.redisService.set(
-        REDIS_KEYS.AUTH.EMAIL_CHANGE_OTP(userId),
+        REDIS_KEYS.AUTH.OTP(OtpPurpose.EMAIL_CHANGE, userId),
         JSON.stringify(pending),
         OTP_TTL_SECONDS,
       ),
       this.redisService.delete(
-        REDIS_KEYS.AUTH.EMAIL_CHANGE_OTP_ATTEMPTS(userId),
+        REDIS_KEYS.AUTH.OTP_ATTEMPTS(OtpPurpose.EMAIL_CHANGE, userId),
       ),
       this._sendOtpEmail(
         email,
@@ -516,8 +529,11 @@ export class AuthService {
     userId: string,
     { email, otp }: VerifyEmailChangeDto,
   ) {
-    const otpKey = REDIS_KEYS.AUTH.EMAIL_CHANGE_OTP(userId);
-    const attemptsKey = REDIS_KEYS.AUTH.EMAIL_CHANGE_OTP_ATTEMPTS(userId);
+    const otpKey = REDIS_KEYS.AUTH.OTP(OtpPurpose.EMAIL_CHANGE, userId);
+    const attemptsKey = REDIS_KEYS.AUTH.OTP_ATTEMPTS(
+      OtpPurpose.EMAIL_CHANGE,
+      userId,
+    );
     const [attempts, rawPending] = await Promise.all([
       this.redisService.incr(attemptsKey, OTP_TTL_SECONDS),
       this.redisService.get(otpKey),
@@ -563,7 +579,7 @@ export class AuthService {
 
     return toUserResponse(user);
   }
-  
+
   private async _createSession(
     userId: string,
     deviceId: string,
@@ -605,7 +621,7 @@ export class AuthService {
     email: string,
   ): Promise<PendingRegistration | null> {
     const raw = await this.redisService.get(
-      REDIS_KEYS.AUTH.REGISTER_OTP(email),
+      REDIS_KEYS.AUTH.OTP(OtpPurpose.REGISTER, email),
     );
     if (!raw) return null;
 

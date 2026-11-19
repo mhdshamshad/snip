@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { GoogleAuthDto } from './dto/google-auth.dto';
@@ -50,6 +51,7 @@ export class AuthController {
       86400000; // 24 * 60 * 60 * 1000
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(
@@ -64,6 +66,7 @@ export class AuthController {
     return { accessToken, user };
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @HttpCode(HttpStatus.OK)
   @Post('google')
   async googleLogin(
@@ -77,6 +80,7 @@ export class AuthController {
     return { accessToken, user };
   }
 
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
   @Post('register')
   async register(@Body() dto: RegisterDto) {
     await this.authService.register(dto);
@@ -85,6 +89,7 @@ export class AuthController {
     };
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @HttpCode(HttpStatus.OK)
   @Post('verify-otp')
   async verifyOtp(
@@ -97,12 +102,14 @@ export class AuthController {
     return { accessToken, user };
   }
 
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
   @HttpCode(HttpStatus.OK)
   @Post('resend-otp')
   async resendOtp(@Body() dto: ResendOtpDto) {
     return this.authService.resendOtp(dto);
   }
 
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
   @HttpCode(HttpStatus.OK)
   @Post('forgot-password')
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
@@ -112,6 +119,7 @@ export class AuthController {
     };
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @HttpCode(HttpStatus.OK)
   @Post('reset-password')
   async resetPassword(@Body() dto: ResetPasswordDto) {

@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ConfigModule } from '@nestjs/config';
 import { validate } from './config/env.validation';
 import { PrismaModule } from './database/prisma.module';
@@ -15,6 +17,13 @@ import { UrlsModule } from './urls/urls.module';
       isGlobal: true,
       validate,
     }),
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60_000,
+        limit: 100,
+      },
+    ]),
     PrismaModule,
     RedisModule,
     EmailModule,
@@ -22,6 +31,12 @@ import { UrlsModule } from './urls/urls.module';
     AuthModule,
     UsersModule,
     UrlsModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

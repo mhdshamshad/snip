@@ -1,3 +1,9 @@
+export enum OtpPurpose {
+  REGISTER = 'register',
+  PASSWORD_RESET = 'password_reset',
+  EMAIL_CHANGE = 'email_change',
+}
+
 export const REDIS_KEYS = {
   AUTH: {
     USER_LOGGED_OUT_AT: (userId: string) => `auth:logged_out_at:${userId}`,
@@ -7,15 +13,10 @@ export const REDIS_KEYS = {
     REFRESH_TOKEN: (userId: string, deviceId: string) =>
       `auth:refresh:${userId}:${deviceId}`,
     REFRESH_PATTERN: (userId: string) => `auth:refresh:${userId}:*`,
-    REGISTER_OTP: (email: string) => `auth:register_otp:${email}`,
-    REGISTER_OTP_ATTEMPTS: (email: string) =>
-      `auth:register_otp_attempts:${email}`,
-    PASSWORD_RESET: (email: string) => `auth:password_reset:${email}`,
-    PASSWORD_RESET_ATTEMPTS: (email: string) =>
-      `auth:password_reset_attempts:${email}`,
-    EMAIL_CHANGE_OTP: (userId: string) => `auth:email_change_otp:${userId}`,
-    EMAIL_CHANGE_OTP_ATTEMPTS: (userId: string) =>
-      `auth:email_change_otp_attempts:${userId}`,
+    OTP: (purpose: OtpPurpose, identifier: string) =>
+      `auth:otp:${purpose}:${identifier}`,
+    OTP_ATTEMPTS: (purpose: OtpPurpose, identifier: string) =>
+      `auth:otp_attempts:${purpose}:${identifier}`,
     EMAIL_CHANGE_LIMIT: (userId: string) => `auth:email_change_limit:${userId}`,
   },
 } as const;

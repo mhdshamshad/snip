@@ -20,8 +20,12 @@ export function useGoogleLogin() {
       queryClient.setQueryData(authKeys.profile(), user);
       toast.success('Logged in successfully');
 
-      const state = location.state as { from?: { pathname?: string } } | null;
-      navigate(state?.from?.pathname || APP_ROUTES.DASHBOARD, { replace: true });
+      const from = (location.state as { from?: Location } | null)?.from;
+      const target =
+        from?.pathname.startsWith(APP_ROUTES.URLS) || from?.pathname === APP_ROUTES.SETTINGS
+          ? from.pathname + from.search + from.hash
+          : APP_ROUTES.URLS;
+      navigate(target, { replace: true });
     },
     onError: error => {
       toast.error(handleApiError(error));

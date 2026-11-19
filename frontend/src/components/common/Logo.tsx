@@ -15,7 +15,7 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-export function Logo({ className, to = '/' }: { className?: string; to?: '/' | '/dashboard' }) {
+export function Logo({ className, to = '/' }: { className?: string; to?: '/' | '/urls' }) {
   return (
     <Link
       to={to}
