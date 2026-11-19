@@ -43,7 +43,7 @@ const FEATURES = [
   {
     icon: Lock,
     title: 'Private by account',
-    body: "Your links are yours. Other accounts can't see or delete them.",
+    body: 'Only you can view and manage your saved links in your account.',
   },
   {
     icon: ClipboardCopy,
@@ -144,7 +144,7 @@ export default function HomePage() {
             </div>
 
             <div className="mt-10 grid items-stretch gap-3 md:grid-cols-[1fr_auto_1fr_auto_1fr]">
-              <FlowCard label="Visitor opens" value="snip.app/r/aB92xK" />
+              <FlowCard label="Visitor opens" value="snip.app/aB92xK" />
               <FlowArrow />
               <FlowCard
                 label="Snip looks up the code"
@@ -276,7 +276,7 @@ function ProductPreview() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate font-mono text-sm font-medium text-foreground">
-                snip.app/r/launch-kit
+                snip.app/launch-kit
               </p>
               <p className="flex items-center gap-1 text-[11px] text-success font-medium">
                 <Check className="size-3" /> Ready to share

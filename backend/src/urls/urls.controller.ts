@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Param,
   ParseUUIDPipe,
   Post,
@@ -19,11 +20,11 @@ import { ListUrlsQueryDto } from './dto/list-urls-query.dto';
 import { UrlResponse } from './dto/url-response.dto';
 import { UrlsService } from './urls.service';
 
-@UseGuards(AuthGuard)
 @Controller('urls')
 export class UrlsController {
   constructor(private readonly urlsService: UrlsService) {}
 
+  @UseGuards(AuthGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(
@@ -33,6 +34,7 @@ export class UrlsController {
     return this.urlsService.create(userId, dto);
   }
 
+  @UseGuards(AuthGuard)
   @Get('check-alias')
   async checkAlias(
     @Query() query: CheckAliasQueryDto,
@@ -41,12 +43,23 @@ export class UrlsController {
     return { available };
   }
 
+  @Get('resolve/:code')
+  async resolve(@Param('code') code: string): Promise<{ originalUrl: string }> {
+    const originalUrl = await this.urlsService.resolve(code);
+    if (!originalUrl) {
+      throw new NotFoundException('Short link not found');
+    }
+    return { originalUrl };
+  }
+
   @Get()
+  @UseGuards(AuthGuard)
   list(@CurrentUser('id') userId: string, @Query() query: ListUrlsQueryDto) {
     return this.urlsService.list(userId, query);
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
   async delete(
     @CurrentUser('id') userId: string,
@@ -57,6 +70,7 @@ export class UrlsController {
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard)
   getById(
     @CurrentUser('id') userId: string,
     @Param('id', ParseUUIDPipe) id: string,

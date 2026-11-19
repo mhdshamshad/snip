@@ -16,6 +16,7 @@ const VerifyOtpPage = lazy(() => import('@/features/auth/pages/VerifyOtpPage'));
 const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage'));
 const UrlListPage = lazy(() => import('@/features/urls/pages/UrlListPage'));
 const UrlDetailsPage = lazy(() => import('@/features/urls/pages/UrlDetailsPage'));
+const ShortLinkRedirectPage = lazy(() => import('@/features/urls/pages/ShortLinkRedirectPage'));
 const AccountPage = lazy(() => import('@/features/account/pages/AccountPage'));
 
 export default function App() {
@@ -28,6 +29,7 @@ export default function App() {
         <Route path={APP_ROUTES.REGISTER} element={<RegisterPage />} />
         <Route path={APP_ROUTES.VERIFY_OTP} element={<VerifyOtpPage />} />
         <Route path={APP_ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+        <Route path={APP_ROUTES.SHORT_LINK} element={<ShortLinkRedirectPage />} />
 
         {/* 2. Authenticated */}
         <Route element={<ProtectedLayout />}>

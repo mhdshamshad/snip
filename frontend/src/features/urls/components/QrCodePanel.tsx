@@ -95,7 +95,7 @@ export function QrCodePanel({ value, code }: { value: string; code: string }) {
     <Panel>
       <PanelHeader
         title="QR code"
-        description="Scans open the short link, so clicks are counted."
+        description="Scanning opens the short link and records a click."
       />
 
       <div className="space-y-5 p-4 sm:p-5">

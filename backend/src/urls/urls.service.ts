@@ -21,13 +21,22 @@ const MAX_CODE_ATTEMPTS = 5;
 
 @Injectable()
 export class UrlsService {
-  private readonly baseUrl: string;
+  private readonly shortLinkBaseUrl: string;
+  private readonly selfLinkHosts: Set<string>;
 
   constructor(
     @Inject(URL_REPOSITORY) private readonly urlRepo: IUrlRepository,
     private readonly configService: ConfigService<Env, true>,
   ) {
-    this.baseUrl = this.configService.get('BASE_URL', { infer: true });
+    const frontendOrigins = this.configService
+      .getOrThrow('FRONTEND_URL', { infer: true })
+      .split(',')
+      .map((origin) => new URL(origin.trim()));
+    this.shortLinkBaseUrl = frontendOrigins[0].origin;
+    this.selfLinkHosts = new Set([
+      new URL(this.configService.getOrThrow('BASE_URL', { infer: true })).host,
+      ...frontendOrigins.map((origin) => origin.host),
+    ]);
   }
 
   async create(
@@ -47,7 +56,7 @@ export class UrlsService {
         originalUrl,
         shortCode: customAlias ?? generateShortCode(),
       });
-      if (url) return toUrlResponse(url, this.baseUrl);
+      if (url) return toUrlResponse(url, this.shortLinkBaseUrl);
     }
 
     throw customAlias
@@ -67,7 +76,7 @@ export class UrlsService {
     );
 
     return {
-      data: data.map((url) => toUrlResponse(url, this.baseUrl)),
+      data: data.map((url) => toUrlResponse(url, this.shortLinkBaseUrl)),
       nextCursor,
     };
   }
@@ -89,7 +98,7 @@ export class UrlsService {
   async getById(userId: string, id: string): Promise<UrlResponse> {
     const url = await this.urlRepo.findOwnedById(id, userId);
     if (!url) throw new NotFoundException('Link not found');
-    return toUrlResponse(url, this.baseUrl);
+    return toUrlResponse(url, this.shortLinkBaseUrl);
   }
 
   private isReserved(alias: string): boolean {
@@ -103,7 +112,7 @@ export class UrlsService {
     } catch {
       throw new BadRequestException('A valid URL is required');
     }
-    if (host === this.baseUrl) {
+    if (this.selfLinkHosts.has(host)) {
       throw new BadRequestException(
         'You cannot shorten a link that points to this service',
       );

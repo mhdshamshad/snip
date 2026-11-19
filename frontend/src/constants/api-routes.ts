@@ -19,6 +19,7 @@ export const URL_API = {
   BASE: '/urls',
   BY_ID: (id: string) => `/urls/${id}`,
   CHECK_ALIAS: '/urls/check-alias',
+  RESOLVE: (code: string) => `/urls/resolve/${encodeURIComponent(code)}`,
 } as const;
 
 export const USER_API = { ME: '/users/me' } as const;

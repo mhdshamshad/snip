@@ -21,7 +21,7 @@ export function toUrlResponse(
     id: url.id,
     code: url.shortCode,
     originalUrl: url.originalUrl,
-    shortUrl: `${baseUrl}/r/${url.shortCode}`,
+    shortUrl: `${baseUrl}/${url.shortCode}`,
     clicks: url.clicks,
     lastClickedAt: url.lastClickedAt,
     createdAt: url.createdAt,

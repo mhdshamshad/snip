@@ -7,6 +7,7 @@ export const APP_ROUTES = {
 
   URLS: '/urls',
   URL_DETAILS: '/urls/:id',
+  SHORT_LINK: '/:code',
   SETTINGS: '/settings',
 
   UNAUTHORIZED: '/403',
