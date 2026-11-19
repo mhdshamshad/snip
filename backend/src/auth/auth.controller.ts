@@ -21,6 +21,8 @@ import { ResendOtpDto } from './dto/resend-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { RequestEmailChangeDto } from './dto/request-email-change.dto';
+import { VerifyEmailChangeDto } from './dto/verify-email-change.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { AuthGuard } from './guards/auth.guard';
 import {
@@ -170,6 +172,31 @@ export class AuthController {
   @Get('me')
   async getMe(@CurrentUser('id') userId: string) {
     return this.authService.getMe(userId);
+  }
+
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Post('email-change')
+  async requestEmailChange(
+    @CurrentUser('id') userId: string,
+    @Body() { email }: RequestEmailChangeDto,
+  ) {
+    await this.authService.requestEmailChange(userId, email);
+    return { message: 'Verification code sent to your new email address' };
+  }
+
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Patch('email-change/verify')
+  async verifyEmailChange(
+    @CurrentUser('id') userId: string,
+    @Body() dto: VerifyEmailChangeDto,
+  ) {
+    const user = await this.authService.verifyEmailChange(userId, dto);
+    return {
+      user,
+      message: 'Email address updated successfully',
+    };
   }
 
   @UseGuards(AuthGuard)

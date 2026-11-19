@@ -13,4 +13,18 @@ export const accountApi = {
     const res = await api.patch<ApiResponse<LoginResponse>>(AUTH_API.CHANGE_PASSWORD, data);
     return res.data;
   },
+  requestEmailOtp: async (email: string): Promise<ApiResponse<null>> => {
+    const res = await api.post<ApiResponse<null>>(AUTH_API.CHANGE_EMAIL, { email });
+    return res.data;
+  },
+  updateEmail: async (data: {
+    email: string;
+    otp: string;
+  }): Promise<ApiResponse<{ user: AuthUser }>> => {
+    const res = await api.patch<ApiResponse<{ user: AuthUser }>>(
+      AUTH_API.VERIFY_EMAIL_CHANGE,
+      data
+    );
+    return res.data;
+  },
 };

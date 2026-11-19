@@ -13,7 +13,12 @@ export const REDIS_KEYS = {
     PASSWORD_RESET: (email: string) => `auth:password_reset:${email}`,
     PASSWORD_RESET_ATTEMPTS: (email: string) =>
       `auth:password_reset_attempts:${email}`,
+    EMAIL_CHANGE_OTP: (userId: string) => `auth:email_change_otp:${userId}`,
+    EMAIL_CHANGE_OTP_ATTEMPTS: (userId: string) =>
+      `auth:email_change_otp_attempts:${userId}`,
+    EMAIL_CHANGE_LIMIT: (userId: string) => `auth:email_change_limit:${userId}`,
   },
 } as const;
 
 export const OTP_TTL_SECONDS = 10 * 60;
+export const EMAIL_CHANGE_WINDOW_SECONDS = 7 * 24 * 60 * 60;

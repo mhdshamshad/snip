@@ -13,6 +13,7 @@ export * from './types/auth.types';
 export * from './hooks/useLogin';
 export * from './hooks/useGoogleLogin';
 export * from './hooks/useLogout';
+export * from './hooks/useLogoutAll';
 export * from './hooks/useInitAuth';
 export * from './hooks/useRegister';
 export * from './hooks/useVerifyOtp';

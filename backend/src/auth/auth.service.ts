@@ -31,11 +31,13 @@ import { JwtPayload } from '../shared/types/auth.types';
 import { RedisService } from '../redis/redis.service';
 import { toUserResponse, UserResponse } from '../users/dto/user-response.dto';
 import {
+  EMAIL_CHANGE_WINDOW_SECONDS,
   OTP_TTL_SECONDS,
   REDIS_KEYS,
 } from '../shared/constants/redis.constants';
 import { EMAIL_SERVICE, type IEmailService } from '../email/email.interface';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { VerifyEmailChangeDto } from './dto/verify-email-change.dto';
 
 interface PendingRegistration {
   name: string;
@@ -43,8 +45,14 @@ interface PendingRegistration {
   passwordHash: string;
   otp: string;
 }
+
+interface PendingEmailChange {
+  email: string;
+  otp: string;
+}
 const SESSION_EXPIRED = 'Your session has expired. Please sign in again.';
 const MAX_OTP_ATTEMPTS = 5;
+const MAX_EMAIL_CHANGES_PER_WINDOW = 2;
 
 @Injectable()
 export class AuthService {
@@ -458,6 +466,104 @@ export class AuthService {
     };
   }
 
+  async requestEmailChange(userId: string, email: string) {
+    const attemptsKey = REDIS_KEYS.AUTH.EMAIL_CHANGE_LIMIT(userId);
+
+    const [user, existingUser, emailChanges] = await Promise.all([
+      this.userRepo.findById(userId),
+      this.userRepo.findByEmail(email),
+      this.redisService.get(attemptsKey),
+    ]);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (email === user.email) {
+      throw new BadRequestException('This is already your current email');
+    }
+    if (existingUser) {
+      throw new ConflictException('Email already in use');
+    }
+    if (emailChanges && Number(emailChanges) > MAX_EMAIL_CHANGES_PER_WINDOW) {
+      throw new HttpException(
+        `You can change your email up to ${MAX_EMAIL_CHANGES_PER_WINDOW} times within a 
+        ${EMAIL_CHANGE_WINDOW_SECONDS / (24 * 60 * 60)}-day period.`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    const otp = generateOtp6Digit();
+    const pending: PendingEmailChange = { email, otp };
+
+    await Promise.all([
+      this.redisService.set(
+        REDIS_KEYS.AUTH.EMAIL_CHANGE_OTP(userId),
+        JSON.stringify(pending),
+        OTP_TTL_SECONDS,
+      ),
+      this.redisService.delete(
+        REDIS_KEYS.AUTH.EMAIL_CHANGE_OTP_ATTEMPTS(userId),
+      ),
+      this._sendOtpEmail(
+        email,
+        otp,
+        'Verify your new Snip email address',
+        'Use the code below to confirm your new email address.',
+      ),
+    ]);
+  }
+
+  async verifyEmailChange(
+    userId: string,
+    { email, otp }: VerifyEmailChangeDto,
+  ) {
+    const otpKey = REDIS_KEYS.AUTH.EMAIL_CHANGE_OTP(userId);
+    const attemptsKey = REDIS_KEYS.AUTH.EMAIL_CHANGE_OTP_ATTEMPTS(userId);
+    const [attempts, rawPending] = await Promise.all([
+      this.redisService.incr(attemptsKey, OTP_TTL_SECONDS),
+      this.redisService.get(otpKey),
+    ]);
+
+    if (attempts > MAX_OTP_ATTEMPTS) {
+      await Promise.all([
+        this.redisService.delete(otpKey),
+        this.redisService.delete(attemptsKey),
+      ]);
+      throw new HttpException(
+        'Too many verification attempts. Please request a new code.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+    if (!rawPending) {
+      throw new BadRequestException(
+        'No pending email change. Request a new verification code.',
+      );
+    }
+
+    let pending: PendingEmailChange;
+    try {
+      pending = JSON.parse(rawPending) as PendingEmailChange;
+    } catch {
+      throw new BadRequestException('Invalid email verification state');
+    }
+
+    if (pending.email !== email || pending.otp !== otp) {
+      throw new BadRequestException(
+        `Invalid verification code. ${MAX_OTP_ATTEMPTS - attempts} attempt(s) remaining.`,
+      );
+    }
+    const user = await this.userRepo.update(userId, { email });
+    await Promise.all([
+      this.redisService.delete(otpKey),
+      this.redisService.delete(attemptsKey),
+      this.redisService.incr(
+        REDIS_KEYS.AUTH.EMAIL_CHANGE_LIMIT(userId),
+        EMAIL_CHANGE_WINDOW_SECONDS,
+      ),
+    ]);
+
+    return toUserResponse(user);
+  }
+  
   private async _createSession(
     userId: string,
     deviceId: string,
