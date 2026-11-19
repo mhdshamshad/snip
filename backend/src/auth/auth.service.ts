@@ -31,10 +31,13 @@ import { JwtPayload } from '../shared/types/auth.types';
 import { RedisService } from '../redis/redis.service';
 import { toUserResponse, UserResponse } from '../users/dto/user-response.dto';
 import {
+  EMAIL_CHANGE_WINDOW_SECONDS,
   OTP_TTL_SECONDS,
   REDIS_KEYS,
 } from '../shared/constants/redis.constants';
 import { EMAIL_SERVICE, type IEmailService } from '../email/email.interface';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { VerifyEmailChangeDto } from './dto/verify-email-change.dto';
 
 interface PendingRegistration {
   name: string;
@@ -42,8 +45,14 @@ interface PendingRegistration {
   passwordHash: string;
   otp: string;
 }
+
+interface PendingEmailChange {
+  email: string;
+  otp: string;
+}
 const SESSION_EXPIRED = 'Your session has expired. Please sign in again.';
 const MAX_OTP_ATTEMPTS = 5;
+const MAX_EMAIL_CHANGES_PER_WINDOW = 2;
 
 @Injectable()
 export class AuthService {
@@ -140,7 +149,7 @@ export class AuthService {
 
     const deviceId = randomUUID();
     const [tokens] = await Promise.all([
-      this._createSession(user.id, user.email, deviceId),
+      this._createSession(user.id, deviceId),
       this.redisService.delete(otpKey),
       this.redisService.delete(attemptsKey),
     ]);
@@ -263,7 +272,7 @@ export class AuthService {
     }
 
     const deviceId = randomUUID();
-    const tokens = await this._createSession(user.id, user.email, deviceId);
+    const tokens = await this._createSession(user.id, deviceId);
 
     return {
       ...tokens,
@@ -305,7 +314,7 @@ export class AuthService {
 
     if (user) {
       return {
-        ...(await this._createSession(user.id, user.email, deviceId)),
+        ...(await this._createSession(user.id, deviceId)),
         user: toUserResponse(user),
       };
     }
@@ -317,11 +326,7 @@ export class AuthService {
       passwordHash,
     });
 
-    const tokens = await this._createSession(
-      newUser.id,
-      newUser.email,
-      deviceId,
-    );
+    const tokens = await this._createSession(newUser.id, deviceId);
     return {
       ...tokens,
       user: toUserResponse(newUser),
@@ -360,7 +365,7 @@ export class AuthService {
     }
 
     const [tokens] = await Promise.all([
-      this._createSession(user.id, user.email, deviceId),
+      this._createSession(user.id, deviceId),
       this._blacklistAccessToken(oldAccessToken),
     ]);
 
@@ -424,12 +429,151 @@ export class AuthService {
     return toUserResponse(user);
   }
 
+  async changePassword(
+    userId: string,
+    deviceId: string,
+    { currentPassword, newPassword }: ChangePasswordDto,
+  ) {
+    const user = await this.userRepo.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!(await comparePassword(currentPassword, user.passwordHash))) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+    const invalidationCutoff = Math.floor(Date.now() / 1000) + 1;
+
+    const [passwordHash] = await Promise.all([
+      hashPassword(newPassword),
+      this.redisService.set(
+        REDIS_KEYS.AUTH.USER_LOGGED_OUT_AT(userId),
+        invalidationCutoff.toString(),
+        this.refreshTtl,
+      ),
+    ]);
+    await this.userRepo.update(userId, { passwordHash });
+    const { accessToken, refreshToken } = await this._createSession(
+      userId,
+      deviceId,
+      invalidationCutoff,
+    );
+
+    return {
+      accessToken,
+      refreshToken,
+      user: toUserResponse(user),
+    };
+  }
+
+  async requestEmailChange(userId: string, email: string) {
+    const attemptsKey = REDIS_KEYS.AUTH.EMAIL_CHANGE_LIMIT(userId);
+
+    const [user, existingUser, emailChanges] = await Promise.all([
+      this.userRepo.findById(userId),
+      this.userRepo.findByEmail(email),
+      this.redisService.get(attemptsKey),
+    ]);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (email === user.email) {
+      throw new BadRequestException('This is already your current email');
+    }
+    if (existingUser) {
+      throw new ConflictException('Email already in use');
+    }
+    if (emailChanges && Number(emailChanges) >= MAX_EMAIL_CHANGES_PER_WINDOW) {
+      throw new HttpException(
+        `You can change your email up to ${MAX_EMAIL_CHANGES_PER_WINDOW} times within a 
+        ${EMAIL_CHANGE_WINDOW_SECONDS / (24 * 60 * 60)}-day period.`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    const otp = generateOtp6Digit();
+    const pending: PendingEmailChange = { email, otp };
+
+    await Promise.all([
+      this.redisService.set(
+        REDIS_KEYS.AUTH.EMAIL_CHANGE_OTP(userId),
+        JSON.stringify(pending),
+        OTP_TTL_SECONDS,
+      ),
+      this.redisService.delete(
+        REDIS_KEYS.AUTH.EMAIL_CHANGE_OTP_ATTEMPTS(userId),
+      ),
+      this._sendOtpEmail(
+        email,
+        otp,
+        'Verify your new Snip email address',
+        'Use the code below to confirm your new email address.',
+      ),
+    ]);
+  }
+
+  async verifyEmailChange(
+    userId: string,
+    { email, otp }: VerifyEmailChangeDto,
+  ) {
+    const otpKey = REDIS_KEYS.AUTH.EMAIL_CHANGE_OTP(userId);
+    const attemptsKey = REDIS_KEYS.AUTH.EMAIL_CHANGE_OTP_ATTEMPTS(userId);
+    const [attempts, rawPending] = await Promise.all([
+      this.redisService.incr(attemptsKey, OTP_TTL_SECONDS),
+      this.redisService.get(otpKey),
+    ]);
+
+    if (attempts > MAX_OTP_ATTEMPTS) {
+      await Promise.all([
+        this.redisService.delete(otpKey),
+        this.redisService.delete(attemptsKey),
+      ]);
+      throw new HttpException(
+        'Too many verification attempts. Please request a new code.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+    if (!rawPending) {
+      throw new BadRequestException(
+        'No pending email change. Request a new verification code.',
+      );
+    }
+
+    let pending: PendingEmailChange;
+    try {
+      pending = JSON.parse(rawPending) as PendingEmailChange;
+    } catch {
+      throw new BadRequestException('Invalid email verification state');
+    }
+
+    if (pending.email !== email || pending.otp !== otp) {
+      throw new BadRequestException(
+        `Invalid verification code. ${MAX_OTP_ATTEMPTS - attempts} attempt(s) remaining.`,
+      );
+    }
+    const user = await this.userRepo.update(userId, { email });
+    await Promise.all([
+      this.redisService.delete(otpKey),
+      this.redisService.delete(attemptsKey),
+      this.redisService.incr(
+        REDIS_KEYS.AUTH.EMAIL_CHANGE_LIMIT(userId),
+        EMAIL_CHANGE_WINDOW_SECONDS,
+      ),
+    ]);
+
+    return toUserResponse(user);
+  }
+  
   private async _createSession(
     userId: string,
-    email: string,
     deviceId: string,
+    issuedAt?: number,
   ) {
-    const payload = { sub: userId, email, deviceId };
+    const payload = {
+      sub: userId,
+      deviceId,
+      ...(issuedAt === undefined ? {} : { iat: issuedAt }),
+    };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {

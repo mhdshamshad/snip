@@ -10,7 +10,9 @@ export const AUTH_API = {
   LOGOUT: '/auth/logout',
   LOGOUT_ALL: '/auth/logout-all',
   ME: '/auth/me',
-  SESSIONS: '/auth/sessions',
+  CHANGE_EMAIL: '/auth/email-change',
+  VERIFY_EMAIL_CHANGE: '/auth/email-change/verify',
+  CHANGE_PASSWORD: '/auth/password',
 } as const;
 
 export const URL_API = {
@@ -18,3 +20,5 @@ export const URL_API = {
   BY_ID: (id: string) => `/urls/${id}`,
   CHECK_ALIAS: '/urls/check-alias',
 } as const;
+
+export const USER_API = { ME: '/users/me' } as const;
