@@ -1,10 +1,11 @@
 import type React from 'react';
+import { AlertTriangle } from 'lucide-react';
+
 import { AppModal } from './AppModal';
 import { Button } from './Button';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
-  onOpenChange?: (open: boolean) => void;
   onClose: () => void;
   onConfirm: () => void;
   title: string;
@@ -31,19 +32,29 @@ export function ConfirmDialog({
       isOpen={isOpen}
       onClose={onClose}
       maxWidth="md"
-      title={title}
+      title={
+        <span className="flex items-center gap-2.5">
+          {destructive && (
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+              <AlertTriangle className="size-4" />
+            </span>
+          )}
+          <span>{title}</span>
+        </span>
+      }
       description={description}
       showCloseButton={!isLoading}
       closeOnBackdropClick={!isLoading}
+      className="rounded-xl"
     >
-      <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={onClose}
           disabled={isLoading}
-          className="h-10 sm:h-9"
+          className="h-9 px-4"
         >
           {cancelLabel}
         </Button>
@@ -54,7 +65,7 @@ export function ConfirmDialog({
           size="sm"
           onClick={onConfirm}
           isLoading={isLoading}
-          className="h-10 sm:h-9"
+          className="h-9 px-4"
         >
           {confirmLabel}
         </Button>

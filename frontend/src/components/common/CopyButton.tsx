@@ -59,7 +59,7 @@ export function CopyButton({
     try {
       await writeClipboard(value);
       setCopied(true);
-      toast.success('Copied to clipboard', { description: value });
+      toast.success('Copied to clipboard');
     } catch {
       toast.error("Couldn't copy", {
         description: 'Please select the link and copy manually.',

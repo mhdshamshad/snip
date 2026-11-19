@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useId } from 'react';
 import type React from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
@@ -35,6 +35,7 @@ export function AppModal({
   closeOnBackdropClick = true,
   className,
 }: AppModalProps) {
+  const id = useId();
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -68,8 +69,8 @@ export function AppModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
       role="dialog"
       aria-modal="true"
-      aria-labelledby={title ? 'modal-title' : undefined}
-      aria-describedby={description ? 'modal-description' : undefined}
+      aria-labelledby={title ? `${id}-title` : undefined}
+      aria-describedby={description ? `${id}-description` : undefined}
     >
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
@@ -92,13 +93,13 @@ export function AppModal({
           <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border pb-3">
             <div>
               {title && (
-                <h3 id="modal-title" className="text-base font-semibold text-foreground">
+                <h3 id={`${id}-title`} className="text-base font-semibold text-foreground">
                   {title}
                 </h3>
               )}
               {description && (
                 <p
-                  id="modal-description"
+                  id={`${id}-description`}
                   className="mt-1 text-xs text-muted-foreground leading-relaxed"
                 >
                   {description}

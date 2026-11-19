@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { Button, FormField, Input } from '@/components/common';
+import { Button, FormField, Input, Panel, PanelHeader } from '@/components/common';
 import type { AuthUser } from '@/features/auth';
-import { Panel, PanelHeader } from '@/features/urls';
 import { emailSchema, type EmailFormType } from '../validation/account.schema';
 import { useRequestEmailOtp } from '../hooks/useRequestEmailOtp';
 import { useUpdateEmail } from '../hooks/useUpdateEmail';
@@ -116,7 +115,9 @@ export function ChangeEmailForm({ user }: { user: AuthUser }) {
                     disabled={isPending || remainingSeconds > 0}
                     leftIcon={<RotateCcw size={14} />}
                     onClick={() => {
-                      if (remainingSeconds > 0) {return;}
+                      if (remainingSeconds > 0) {
+                        return;
+                      }
                       sendCode(email);
                     }}
                   >

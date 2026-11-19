@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Button } from '@/components/common';
+import { Button, Panel, PanelHeader } from '@/components/common';
 import { cn } from '@/lib/utils';
-import { Panel, PanelHeader } from './Panel';
 import { stripUrlProtocol } from '@/utils/format';
 
 const COLORS = [

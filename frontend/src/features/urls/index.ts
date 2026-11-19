@@ -3,7 +3,6 @@ export * from './api/urls.keys';
 export * from './components/CreateUrlModal';
 export * from './components/DeleteUrlModal';
 export * from './components/OpenDestinationLink';
-export * from './components/Panel';
 export * from './components/QrCodePanel';
 export * from './components/UrlList';
 export * from './components/UrlRowActions';
