@@ -137,7 +137,7 @@ export function ChangeEmailForm({ user }: { user: AuthUser }) {
               <Button
                 type="submit"
                 size="sm"
-                isLoading={updateEmail.isPending}
+                isLoading={isPending}
                 disabled={isVerifying && code.length !== 6}
               >
                 {isVerifying ? 'Verify & update' : 'Send code'}
