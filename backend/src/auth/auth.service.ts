@@ -483,7 +483,7 @@ export class AuthService {
     if (existingUser) {
       throw new ConflictException('Email already in use');
     }
-    if (emailChanges && Number(emailChanges) > MAX_EMAIL_CHANGES_PER_WINDOW) {
+    if (emailChanges && Number(emailChanges) >= MAX_EMAIL_CHANGES_PER_WINDOW) {
       throw new HttpException(
         `You can change your email up to ${MAX_EMAIL_CHANGES_PER_WINDOW} times within a 
         ${EMAIL_CHANGE_WINDOW_SECONDS / (24 * 60 * 60)}-day period.`,
