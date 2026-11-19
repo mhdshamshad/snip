@@ -16,9 +16,10 @@ export function AuthLayout({ title, description, footer, children }: AuthLayoutP
 
   if (isAuthenticated) {
     const from = (location.state as { from?: Location } | null)?.from;
-    const target = from?.pathname.startsWith(APP_ROUTES.DASHBOARD)
-      ? from.pathname + from.search + from.hash
-      : APP_ROUTES.DASHBOARD;
+    const target =
+      from?.pathname.startsWith(APP_ROUTES.URLS) || from?.pathname === APP_ROUTES.SETTINGS
+        ? from.pathname + from.search + from.hash
+        : APP_ROUTES.URLS;
     return <Navigate to={target} replace />;
   }
 

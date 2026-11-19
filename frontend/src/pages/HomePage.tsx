@@ -80,7 +80,7 @@ export default function HomePage() {
   const { isAuthenticated } = useAuthStore();
 
   if (isAuthenticated) {
-    return <Navigate to={APP_ROUTES.DASHBOARD} replace />;
+    return <Navigate to={APP_ROUTES.URLS} replace />;
   }
 
   return (

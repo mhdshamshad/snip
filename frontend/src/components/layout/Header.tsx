@@ -19,7 +19,7 @@ export function Header({ onMenuClick, className }: HeaderProps) {
     >
       <div className="flex items-center gap-3">
         <div className="lg:hidden">
-          <Logo to={APP_ROUTES.DASHBOARD} />
+          <Logo to={APP_ROUTES.URLS} />
         </div>
       </div>
 

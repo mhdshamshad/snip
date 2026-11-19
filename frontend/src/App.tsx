@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
-import { AppLayout } from '@/components/layout/AppLayout';
+import { ProtectedLayout } from '@/components/layout/ProtectedLayout';
 import { AppLoader } from '@/components/common/AppLoader';
 import { APP_ROUTES } from '@/constants/app-routes';
 
@@ -30,8 +30,7 @@ export default function App() {
         <Route path={APP_ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
 
         {/* 2. Authenticated */}
-        <Route element={<AppLayout />}>
-          <Route path="dashboard" element={<> Hello </>} />
+        <Route element={<ProtectedLayout />}>
           <Route path={APP_ROUTES.URLS} element={<UrlListPage />} />
           <Route path={APP_ROUTES.URL_DETAILS} element={<UrlDetailsPage />} />
           <Route path={APP_ROUTES.SETTINGS} element={<AccountPage />} />

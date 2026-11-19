@@ -16,7 +16,6 @@ interface NavItem {
 }
 
 const DASHBOARD_NAV_ITEMS: readonly NavItem[] = [
-  { to: APP_ROUTES.DASHBOARD, label: 'Overview', icon: LayoutGrid, end: true },
   { to: APP_ROUTES.URLS, label: 'My URLs', icon: Link2 },
   { to: APP_ROUTES.SETTINGS, label: 'Settings', icon: Settings },
 ];
@@ -40,7 +39,7 @@ export function Sidebar({ open = false, onClose, className }: SidebarProps) {
     >
       {/* Header */}
       <div className="flex h-14 items-center justify-between px-4">
-        <Logo to={APP_ROUTES.DASHBOARD} />
+        <Logo to={APP_ROUTES.URLS} />
 
         <button
           type="button"
