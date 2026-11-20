@@ -1,4 +1,3 @@
-
 import { CookieOptions, Response } from 'express';
 
 export const REFRESH_COOKIE_NAME = 'snip_refresh_token';
@@ -13,9 +12,10 @@ export function getRefreshCookieOptions(
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? 'none' : 'lax',
-    path: '/api/auth',
+    partitioned: isProduction,
+    path: '/',
     maxAge: maxAgeMs,
-  };
+  } as CookieOptions;
 }
 
 export function setRefreshCookie(
@@ -31,10 +31,7 @@ export function setRefreshCookie(
   );
 }
 
-export function clearRefreshCookie(
-  res: Response,
-  isProduction: boolean,
-): void {
+export function clearRefreshCookie(res: Response, isProduction: boolean): void {
   res.clearCookie(REFRESH_COOKIE_NAME, {
     ...getRefreshCookieOptions(isProduction),
     maxAge: 0,

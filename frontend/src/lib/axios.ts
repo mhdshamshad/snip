@@ -58,26 +58,23 @@ api.interceptors.request.use(config => {
 
 let refreshPromise: Promise<RefreshResponse> | null = null;
 
-const requestRefresh = () => refreshClient.post<ApiResponse<RefreshResponse>>(AUTH_API.REFRESH, {});
-
 export function refreshAccessToken(): Promise<RefreshResponse> {
-  refreshPromise ??= (
-    'locks' in navigator
-      ? navigator.locks.request('auth_refresh', requestRefresh)
-      : requestRefresh()
-  )
-    .then(({ data }) => {
-      const { accessToken, user } = data.data;
+  if (!refreshPromise) {
+    refreshPromise = refreshClient
+      .post<ApiResponse<RefreshResponse>>(AUTH_API.REFRESH, {})
+      .then(({ data }) => {
+        const { accessToken, user } = data.data;
 
-      if (!accessToken || !user) {
-        throw new Error('Refresh response did not contain user or access token.');
-      }
-      useAuthStore.getState().setCredentials(user, accessToken);
-      return { accessToken, user };
-    })
-    .finally(() => {
-      refreshPromise = null;
-    });
+        if (!accessToken || !user) {
+          throw new Error('Refresh response did not contain user or access token.');
+        }
+        useAuthStore.getState().setCredentials(user, accessToken);
+        return { accessToken, user };
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
 
   return refreshPromise;
 }

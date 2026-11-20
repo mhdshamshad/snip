@@ -14,6 +14,7 @@ const validEnv = {
   JWT_REFRESH_SECRET: 'refresh_secret_12345',
   JWT_ACCESS_EXPIRES_IN: '15m',
   REFRESH_TOKEN_EXPIRES_IN_DAYS: '7',
+  GOOGLE_CLIENT_ID: 'test-google-client-id.apps.googleusercontent.com',
 };
 
 describe('env.validation', () => {

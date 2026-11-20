@@ -360,14 +360,16 @@ export class AuthService {
 
     const { sub: userId, deviceId, iat } = payload;
 
-    const [loggedOutAt, storedToken] = await Promise.all([
+    const [loggedOutAt, deviceLoggedOutAt] = await Promise.all([
       this.redisService.get(REDIS_KEYS.AUTH.USER_LOGGED_OUT_AT(userId)),
-      this.redisService.get(REDIS_KEYS.AUTH.REFRESH_TOKEN(userId, deviceId)),
+      this.redisService.get(
+        REDIS_KEYS.AUTH.DEVICE_LOGGED_OUT_AT(userId, deviceId),
+      ),
     ]);
 
     if (
-      storedToken !== refreshToken ||
-      (loggedOutAt && iat < Number(loggedOutAt))
+      (loggedOutAt && iat < Number(loggedOutAt)) ||
+      (deviceLoggedOutAt && iat < Number(deviceLoggedOutAt))
     ) {
       throw new UnauthorizedException(SESSION_EXPIRED);
     }
@@ -399,15 +401,15 @@ export class AuthService {
       this._blacklistAccessToken(accessToken),
     ];
 
+    // Per-device logout: only invalidate this specific device, not all devices
     if (sessionPayload?.sub && sessionPayload.deviceId) {
       const { sub, deviceId } = sessionPayload;
       operations.push(
         this.redisService.set(
           REDIS_KEYS.AUTH.DEVICE_LOGGED_OUT_AT(sub, deviceId),
           nowInSeconds.toString(),
-          this.refreshTtl,
+          Math.floor(this.refreshTtl / 1000),
         ),
-        this.redisService.delete(REDIS_KEYS.AUTH.REFRESH_TOKEN(sub, deviceId)),
       );
     }
 
@@ -417,20 +419,11 @@ export class AuthService {
   async logoutAll(userId: string) {
     const invalidationCutoff = Math.floor(Date.now() / 1000) + 1;
 
-    const [, keys] = await Promise.all([
-      this.redisService.set(
-        REDIS_KEYS.AUTH.USER_LOGGED_OUT_AT(userId),
-        invalidationCutoff.toString(),
-        this.refreshTtl,
-      ),
-      this.redisService.client
-        .keys(REDIS_KEYS.AUTH.REFRESH_PATTERN(userId))
-        .catch(() => [] as string[]),
-    ]);
-
-    if (keys.length > 0) {
-      void this.redisService.client.del(...keys).catch(() => undefined);
-    }
+    await this.redisService.set(
+      REDIS_KEYS.AUTH.USER_LOGGED_OUT_AT(userId),
+      invalidationCutoff.toString(),
+      Math.floor(this.refreshTtl / 1000),
+    );
   }
 
   async getMe(userId: string): Promise<UserResponse> {
@@ -604,15 +597,9 @@ export class AuthService {
         secret: this.configService.getOrThrow('JWT_REFRESH_SECRET', {
           infer: true,
         }),
-        expiresIn: this.refreshTtl,
+        expiresIn: Math.floor(this.refreshTtl / 1000),
       }),
     ]);
-
-    await this.redisService.set(
-      REDIS_KEYS.AUTH.REFRESH_TOKEN(userId, deviceId),
-      refreshToken,
-      this.refreshTtl,
-    );
 
     return { accessToken, refreshToken };
   }

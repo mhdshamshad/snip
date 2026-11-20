@@ -36,17 +36,13 @@ export class AuthGuard implements CanActivate {
         secret: accessSecret,
       });
 
-      const [isBlacklisted, loggedOutAt, deviceLoggedOutAt] = await Promise.all(
-        [
-          this.redisService.get(REDIS_KEYS.AUTH.BLACKLISTED_TOKEN(token)),
-          this.redisService.get(
-            REDIS_KEYS.AUTH.USER_LOGGED_OUT_AT(payload.sub),
-          ),
-          this.redisService.get(
-            REDIS_KEYS.AUTH.DEVICE_LOGGED_OUT_AT(payload.sub, payload.deviceId),
-          ),
-        ],
-      );
+      const [isBlacklisted, loggedOutAt, deviceLoggedOutAt] = await Promise.all([
+        this.redisService.get(REDIS_KEYS.AUTH.BLACKLISTED_TOKEN(token)),
+        this.redisService.get(REDIS_KEYS.AUTH.USER_LOGGED_OUT_AT(payload.sub)),
+        this.redisService.get(
+          REDIS_KEYS.AUTH.DEVICE_LOGGED_OUT_AT(payload.sub, payload.deviceId),
+        ),
+      ]);
 
       if (
         isBlacklisted ||

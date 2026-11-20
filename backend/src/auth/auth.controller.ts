@@ -139,17 +139,20 @@ export class AuthController {
     const rawRefreshToken = req.cookies?.[REFRESH_COOKIE_NAME] as
       string | undefined;
     const rawAccessToken = req.headers.authorization?.split(' ')[1];
-    clearRefreshCookie(res, this.isProduction);
-    const { user, accessToken, refreshToken } = await this.authService.refresh(
-      rawRefreshToken ?? '',
-      rawAccessToken,
-    );
-    setRefreshCookie(res, refreshToken, this.isProduction, this.refreshTtl);
 
-    return {
-      accessToken,
-      user,
-    };
+    try {
+      const { user, accessToken, refreshToken } =
+        await this.authService.refresh(rawRefreshToken ?? '', rawAccessToken);
+      setRefreshCookie(res, refreshToken, this.isProduction, this.refreshTtl);
+
+      return {
+        accessToken,
+        user,
+      };
+    } catch (error) {
+      clearRefreshCookie(res, this.isProduction);
+      throw error;
+    }
   }
 
   @HttpCode(HttpStatus.OK)
