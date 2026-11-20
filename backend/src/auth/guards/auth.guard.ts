@@ -28,7 +28,7 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      const accessSecret = this.configService.getOrThrow('JWT_ACCESS_SECRET', {
+      const accessSecret = this.configService.getOrThrow('ACCESS_SECRET', {
         infer: true,
       });
 

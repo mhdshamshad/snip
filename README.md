@@ -10,7 +10,7 @@ Snip is a full-stack URL shortener that allows authenticated users to create, ma
 | Backend API | [Backend API](https://snip-backend-2jm8.onrender.com) |
 | API Documentation | [Swagger UI](https://snip-backend-2jm8.onrender.com/api/docs) |
 | API Health | [Health Check](https://snip-backend-2jm8.onrender.com/api/health) |
-| Demo Video | [Demo Video](https://www.youtube.com/) 
+| Demo Video | [Demo Video](https://youtu.be/z4VkB84cSyE) 
 
 ## Features
 

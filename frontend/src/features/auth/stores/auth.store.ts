@@ -9,10 +9,8 @@ interface AuthState {
   isInitializing: boolean;
 
   setCredentials: (user: AuthUser, accessToken: string) => void;
-  updateToken: (accessToken: string) => void;
   updateUser: (fields: Partial<AuthUser>) => void;
   clearAuth: () => void;
-  finishInitialization: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(set => ({
@@ -30,13 +28,6 @@ export const useAuthStore = create<AuthState>()(set => ({
     });
   },
 
-  updateToken: accessToken => {
-    set(state => ({
-      accessToken,
-      isAuthenticated: Boolean(state.user && accessToken),
-    }));
-  },
-
   updateUser: fields => {
     set(state => ({
       user: state.user ? { ...state.user, ...fields } : null,
@@ -50,9 +41,5 @@ export const useAuthStore = create<AuthState>()(set => ({
       isAuthenticated: false,
       isInitializing: false,
     });
-  },
-
-  finishInitialization: () => {
-    set({ isInitializing: false });
   },
 }));

@@ -37,3 +37,9 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+useAuthStore.subscribe((state, prev) => {
+  if (prev.isAuthenticated && !state.isAuthenticated) {
+    queryClient.clear();
+  }
+});
