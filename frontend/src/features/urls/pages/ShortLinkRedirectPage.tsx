@@ -9,19 +9,10 @@ import { urlsApi } from '@/features/urls/api/urls.api';
 
 export default function ShortLinkRedirectPage() {
   const { code } = useParams<{ code: string }>();
-  const {
-    data: originalUrl,
-    isError,
-    error,
-  } = useQuery({
+
+  const { data: originalUrl, error } = useQuery({
     queryKey: ['short-link-redirect', code],
-    queryFn: () => {
-      if (!code) {
-        throw new Error('Short link code is missing.');
-      }
-      return urlsApi.resolve(code);
-    },
-    enabled: Boolean(code),
+    queryFn: () => urlsApi.resolve(code!),
     retry: false,
   });
 
@@ -31,11 +22,7 @@ export default function ShortLinkRedirectPage() {
     }
   }, [originalUrl]);
 
-  if (!code) {
-    return <Navigate to={APP_ROUTES.NOT_FOUND} replace />;
-  }
-
-  if (isError) {
+  if (error) {
     const status = axios.isAxiosError(error) ? error.response?.status : undefined;
     return (
       <Navigate to={status === 404 ? APP_ROUTES.NOT_FOUND : APP_ROUTES.SERVER_ERROR} replace />

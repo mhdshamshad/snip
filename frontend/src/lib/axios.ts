@@ -2,9 +2,9 @@ import axios, { type InternalAxiosRequestConfig } from 'axios';
 
 import { env } from '@/config/env';
 import { AUTH_API } from '@/constants/api-routes';
-import { useAuthStore, type AuthUser } from '@/features/auth';
+import { useAuthStore } from '@/features/auth/stores/auth.store';
+import type { AuthUser } from '@/features/auth/types/auth.types';
 import type { ApiResponse } from '@/types/api.types';
-import { notifySessionExpired } from '@/lib/auth-channel';
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
@@ -33,55 +33,33 @@ const PUBLIC_URLS = new Set<string>([
   AUTH_API.RESEND_OTP,
   AUTH_API.FORGOT_PASSWORD,
   AUTH_API.RESET_PASSWORD,
-  AUTH_API.REFRESH,
 ]);
 
-export const isPublicRequest = (url?: string): boolean => {
-  if (!url) {
-    return false;
-  }
-  const path = url.split('?')[0].replace(/\/+$/, '');
-  return PUBLIC_URLS.has(path);
-};
+export const isPublicRequest = (url?: string): boolean => PUBLIC_URLS.has(url ?? '');
 
 api.interceptors.request.use(config => {
   const token = useAuthStore.getState().accessToken;
-
-  if (isPublicRequest(config.url)) {
-    delete config.headers.Authorization;
-  } else if (token) {
+  if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-
   return config;
 });
 
-let refreshPromise: Promise<RefreshResponse> | null = null;
+let refreshPromise: Promise<string> | null = null;
 
-export function refreshAccessToken(): Promise<RefreshResponse> {
-  if (!refreshPromise) {
-    refreshPromise = refreshClient
-      .post<ApiResponse<RefreshResponse>>(AUTH_API.REFRESH, {})
-      .then(({ data }) => {
-        const { accessToken, user } = data.data;
-
-        if (!accessToken || !user) {
-          throw new Error('Refresh response did not contain user or access token.');
-        }
-        useAuthStore.getState().setCredentials(user, accessToken);
-        return { accessToken, user };
-      })
-      .finally(() => {
-        refreshPromise = null;
-      });
-  }
+export function refreshAccessToken(): Promise<string> {
+  refreshPromise ??= refreshClient
+    .post<ApiResponse<RefreshResponse>>(AUTH_API.REFRESH)
+    .then(({ data }) => {
+      const { accessToken, user } = data.data;
+      useAuthStore.getState().setCredentials(user, accessToken);
+      return accessToken;
+    })
+    .finally(() => {
+      refreshPromise = null;
+    });
 
   return refreshPromise;
-}
-
-function expireCurrentSession(): void {
-  useAuthStore.getState().clearAuth();
-  notifySessionExpired();
 }
 
 api.interceptors.response.use(
@@ -102,7 +80,7 @@ api.interceptors.response.use(
     }
 
     if (originalRequest._retry) {
-      expireCurrentSession();
+      useAuthStore.getState().clearAuth();
       return Promise.reject(error);
     }
 
@@ -116,11 +94,10 @@ api.interceptors.response.use(
     }
 
     try {
-      const { accessToken } = await refreshAccessToken();
-      originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+      originalRequest.headers.Authorization = `Bearer ${await refreshAccessToken()}`;
     } catch (refreshError) {
       if (axios.isAxiosError(refreshError) && refreshError.response?.status === 401) {
-        expireCurrentSession();
+        useAuthStore.getState().clearAuth();
         return Promise.reject(error);
       }
       return Promise.reject(refreshError);
