@@ -8,6 +8,7 @@ import {
   Post,
   Req,
   Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
@@ -47,8 +48,7 @@ export class AuthController {
       Environment.Production;
 
     this.refreshTtl =
-      this.configService.get('REFRESH_TOKEN_EXPIRES_IN_DAYS', { infer: true }) *
-      86400000; // 24 * 60 * 60 * 1000
+      this.configService.get('REFRESH_EXPIRY_DAYS', { infer: true }) * 86400000; // 24 * 60 * 60 * 1000
   }
 
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
@@ -138,21 +138,17 @@ export class AuthController {
   ) {
     const rawRefreshToken = req.cookies?.[REFRESH_COOKIE_NAME] as
       string | undefined;
-    const rawAccessToken = req.headers.authorization?.split(' ')[1];
-
-    try {
-      const { user, accessToken, refreshToken } =
-        await this.authService.refresh(rawRefreshToken ?? '', rawAccessToken);
-      setRefreshCookie(res, refreshToken, this.isProduction, this.refreshTtl);
-
-      return {
-        accessToken,
-        user,
-      };
-    } catch (error) {
-      clearRefreshCookie(res, this.isProduction);
-      throw error;
+    if (!rawRefreshToken) {
+      throw new UnauthorizedException('Session expired. Please sign in again.');
     }
+    const { user, accessToken, refreshToken } =
+      await this.authService.refresh(rawRefreshToken);
+    setRefreshCookie(res, refreshToken, this.isProduction, this.refreshTtl);
+
+    return {
+      accessToken,
+      user,
+    };
   }
 
   @HttpCode(HttpStatus.OK)

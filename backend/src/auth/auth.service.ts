@@ -10,7 +10,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
+import { JwtService } from '@nestjs/jwt';
 import { randomBytes, randomUUID } from 'crypto';
 import { OAuth2Client, type TokenPayload } from 'google-auth-library';
 import {
@@ -59,7 +59,10 @@ const MAX_EMAIL_CHANGES_PER_WINDOW = 2;
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly googleClient = new OAuth2Client();
-  private readonly refreshTtl: number;
+  private readonly refreshExpirySeconds: number;
+  private readonly accessExpirySeconds: number;
+  private readonly accessSecret: string;
+  private readonly refreshSecret: string;
 
   constructor(
     @Inject(USER_REPOSITORY)
@@ -70,9 +73,16 @@ export class AuthService {
     @Inject(EMAIL_SERVICE)
     private readonly emailService: IEmailService,
   ) {
-    this.refreshTtl =
-      this.configService.get('REFRESH_TOKEN_EXPIRES_IN_DAYS', { infer: true }) *
-      86400; // 24 * 60 * 60
+    this.refreshExpirySeconds =
+      this.configService.get('REFRESH_EXPIRY_DAYS', { infer: true }) * 86400; // 24 * 60 * 60
+    this.accessExpirySeconds =
+      this.configService.get('ACCESS_EXPIRY_MINUTES', { infer: true }) * 60;
+    this.refreshSecret = this.configService.getOrThrow('REFRESH_SECRET', {
+      infer: true,
+    });
+    this.accessSecret = this.configService.getOrThrow('ACCESS_SECRET', {
+      infer: true,
+    });
   }
 
   async register(dto: RegisterDto) {
@@ -124,6 +134,14 @@ export class AuthService {
       this._getPending(email),
     ]);
 
+    if (attempts > MAX_OTP_ATTEMPTS) {
+      await this.redisService.delete(otpKey);
+      throw new HttpException(
+        'Too many failed attempts. Please register again.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
     if (!pending) {
       throw new BadRequestException(
         'Invalid or expired verification code. Please register again.',
@@ -132,15 +150,6 @@ export class AuthService {
     if (pending.otp !== otp) {
       throw new BadRequestException(
         `Invalid verification code. ${MAX_OTP_ATTEMPTS - attempts + 1} attempt(s) remaining.`,
-      );
-    }
-
-    if (attempts > MAX_OTP_ATTEMPTS) {
-      await this.redisService.delete(otpKey);
-
-      throw new HttpException(
-        'Too many failed attempts. Please register again.',
-        HttpStatus.TOO_MANY_REQUESTS,
       );
     }
     if (await this.userRepo.findByEmail(email)) {
@@ -153,9 +162,8 @@ export class AuthService {
       passwordHash: pending.passwordHash,
     });
 
-    const deviceId = randomUUID();
     const [tokens] = await Promise.all([
-      this._createSession(user.id, deviceId),
+      this.generateTokens(user.id),
       this.redisService.delete(otpKey),
       this.redisService.delete(attemptsKey),
     ]);
@@ -254,7 +262,7 @@ export class AuthService {
     }
     if (storedOtp !== otp) {
       throw new BadRequestException(
-        `Invalid verification code. ${MAX_OTP_ATTEMPTS - attempts + 1} attempt(s) remaining.`,
+        `Invalid verification code. ${MAX_OTP_ATTEMPTS - attempts} attempt(s) remaining.`,
       );
     }
 
@@ -284,8 +292,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const deviceId = randomUUID();
-    const tokens = await this._createSession(user.id, deviceId);
+    const tokens = await this.generateTokens(user.id);
 
     return {
       ...tokens,
@@ -321,13 +328,13 @@ export class AuthService {
       );
     }
     const email = payload.email.trim().toLowerCase();
-    const deviceId = randomUUID();
 
     const user = await this.userRepo.findByEmail(email);
 
     if (user) {
+      const tokens = await this.generateTokens(user.id);
       return {
-        ...(await this._createSession(user.id, deviceId)),
+        ...tokens,
         user: toUserResponse(user),
       };
     }
@@ -339,20 +346,18 @@ export class AuthService {
       passwordHash,
     });
 
-    const tokens = await this._createSession(newUser.id, deviceId);
+    const tokens = await this.generateTokens(newUser.id);
     return {
       ...tokens,
       user: toUserResponse(newUser),
     };
   }
 
-  async refresh(refreshToken: string, oldAccessToken?: string) {
+  async refresh(refreshToken: string) {
     let payload: JwtPayload;
     try {
       payload = await this.jwtService.verifyAsync<JwtPayload>(refreshToken, {
-        secret: this.configService.getOrThrow('JWT_REFRESH_SECRET', {
-          infer: true,
-        }),
+        secret: this.refreshSecret,
       });
     } catch {
       throw new UnauthorizedException(SESSION_EXPIRED);
@@ -379,36 +384,28 @@ export class AuthService {
       throw new UnauthorizedException('User no longer exists');
     }
 
-    const [tokens] = await Promise.all([
-      this._createSession(user.id, deviceId),
-      this._blacklistAccessToken(oldAccessToken),
-    ]);
-
     return {
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
+      ...(await this.generateTokens(user.id, deviceId)),
       user: toUserResponse(user),
     };
   }
 
   async logout(refreshToken?: string, accessToken?: string) {
     const nowInSeconds = Math.floor(Date.now() / 1000);
-    const token = refreshToken ?? accessToken;
-    const sessionPayload = token
-      ? (this.jwtService.decode(token) as JwtPayload | null)
+    const payload = refreshToken
+      ? (this.jwtService.decode(refreshToken) as JwtPayload | null)
       : null;
     const operations: Promise<void>[] = [
       this._blacklistAccessToken(accessToken),
     ];
 
-    // Per-device logout: only invalidate this specific device, not all devices
-    if (sessionPayload?.sub && sessionPayload.deviceId) {
-      const { sub, deviceId } = sessionPayload;
+    if (payload?.sub && payload.deviceId) {
+      const { sub, deviceId } = payload;
       operations.push(
         this.redisService.set(
           REDIS_KEYS.AUTH.DEVICE_LOGGED_OUT_AT(sub, deviceId),
           nowInSeconds.toString(),
-          Math.floor(this.refreshTtl / 1000),
+          this.refreshExpirySeconds,
         ),
       );
     }
@@ -417,12 +414,12 @@ export class AuthService {
   }
 
   async logoutAll(userId: string) {
-    const invalidationCutoff = Math.floor(Date.now() / 1000) + 1;
+    const nowInSeconds = Math.floor(Date.now() / 1000);
 
     await this.redisService.set(
       REDIS_KEYS.AUTH.USER_LOGGED_OUT_AT(userId),
-      invalidationCutoff.toString(),
-      Math.floor(this.refreshTtl / 1000),
+      nowInSeconds.toString(),
+      this.refreshExpirySeconds,
     );
   }
 
@@ -431,7 +428,6 @@ export class AuthService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-
     return toUserResponse(user);
   }
 
@@ -448,21 +444,20 @@ export class AuthService {
     if (!(await comparePassword(currentPassword, user.passwordHash))) {
       throw new BadRequestException('Current password is incorrect');
     }
-    const invalidationCutoff = Math.floor(Date.now() / 1000) + 1;
+    const invalidationCutoff = Math.floor(Date.now() / 1000) - 1;
+    const passwordHash = await hashPassword(newPassword);
 
-    const [passwordHash] = await Promise.all([
-      hashPassword(newPassword),
+    await Promise.all([
+      this.userRepo.update(userId, { passwordHash }),
       this.redisService.set(
         REDIS_KEYS.AUTH.USER_LOGGED_OUT_AT(userId),
         invalidationCutoff.toString(),
-        this.refreshTtl,
+        this.refreshExpirySeconds,
       ),
     ]);
-    await this.userRepo.update(userId, { passwordHash });
-    const { accessToken, refreshToken } = await this._createSession(
+    const { accessToken, refreshToken } = await this.generateTokens(
       userId,
       deviceId,
-      invalidationCutoff,
     );
 
     return {
@@ -533,10 +528,7 @@ export class AuthService {
     ]);
 
     if (attempts > MAX_OTP_ATTEMPTS) {
-      await Promise.all([
-        this.redisService.delete(otpKey),
-        this.redisService.delete(attemptsKey),
-      ]);
+      await this.redisService.delete(otpKey);
       throw new HttpException(
         'Too many verification attempts. Please request a new code.',
         HttpStatus.TOO_MANY_REQUESTS,
@@ -573,31 +565,21 @@ export class AuthService {
     return toUserResponse(user);
   }
 
-  private async _createSession(
-    userId: string,
-    deviceId: string,
-    issuedAt?: number,
-  ) {
+  private async generateTokens(userId: string, deviceId?: string) {
     const payload = {
       sub: userId,
-      deviceId,
-      ...(issuedAt === undefined ? {} : { iat: issuedAt }),
+      deviceId: deviceId ?? randomUUID(),
     };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: this.configService.getOrThrow('JWT_ACCESS_SECRET', {
-          infer: true,
-        }),
-        expiresIn: this.configService.getOrThrow('JWT_ACCESS_EXPIRES_IN', {
-          infer: true,
-        }) as JwtSignOptions['expiresIn'],
+        secret: this.accessSecret,
+        expiresIn: this.accessExpirySeconds,
       }),
+
       this.jwtService.signAsync(payload, {
-        secret: this.configService.getOrThrow('JWT_REFRESH_SECRET', {
-          infer: true,
-        }),
-        expiresIn: Math.floor(this.refreshTtl / 1000),
+        secret: this.refreshSecret,
+        expiresIn: this.refreshExpirySeconds,
       }),
     ]);
 
@@ -620,10 +602,11 @@ export class AuthService {
   }
 
   private async _blacklistAccessToken(token?: string): Promise<void> {
-    if (!token) return;
-    const payload = this.jwtService.decode(token) as JwtPayload | null;
-    const ttl = payload?.exp ? payload.exp - Math.floor(Date.now() / 1000) : 0;
-    if (ttl > 0) {
+    const exp = token
+      ? this.jwtService.decode<JwtPayload>(token)?.exp
+      : undefined;
+    const ttl = exp ? exp - Math.floor(Date.now() / 1000) : 0;
+    if (token && ttl > 0) {
       await this.redisService.set(
         REDIS_KEYS.AUTH.BLACKLISTED_TOKEN(token),
         'revoked',

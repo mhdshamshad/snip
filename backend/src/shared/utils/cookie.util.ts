@@ -32,8 +32,7 @@ export function setRefreshCookie(
 }
 
 export function clearRefreshCookie(res: Response, isProduction: boolean): void {
-  res.clearCookie(REFRESH_COOKIE_NAME, {
-    ...getRefreshCookieOptions(isProduction),
-    maxAge: 0,
-  });
+  const { maxAge: _maxAge, ...clearOptions } =
+    getRefreshCookieOptions(isProduction);
+  res.clearCookie(REFRESH_COOKIE_NAME, clearOptions);
 }

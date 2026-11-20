@@ -25,8 +25,10 @@ export function AuthInitializer({ children }: AuthInitializerProps) {
       const channel = new BroadcastChannel(AUTH_CHANNEL);
       channel.onmessage = event => {
         if (event.data?.type === 'LOGOUT') {
-          useAuthStore.getState().clearAuth();
-          queryClient.clear();
+          if (useAuthStore.getState().isAuthenticated) {
+            useAuthStore.getState().clearAuth();
+            queryClient.clear();
+          }
         }
       };
       return () => {

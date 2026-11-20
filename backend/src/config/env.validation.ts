@@ -5,6 +5,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsString,
+  Min,
   validateSync,
 } from 'class-validator';
 
@@ -51,18 +52,19 @@ export class Env {
 
   @IsNotEmpty()
   @IsString()
-  JWT_ACCESS_SECRET!: string;
+  ACCESS_SECRET!: string;
 
   @IsNotEmpty()
   @IsString()
-  JWT_REFRESH_SECRET!: string;
-
-  @IsNotEmpty()
-  @IsString()
-  JWT_ACCESS_EXPIRES_IN!: string;
+  REFRESH_SECRET!: string;
 
   @IsInt()
-  REFRESH_TOKEN_EXPIRES_IN_DAYS!: number;
+  @Min(10)
+  ACCESS_EXPIRY_MINUTES!: number;
+
+  @IsInt()
+  @Min(1)
+  REFRESH_EXPIRY_DAYS!: number;
 }
 
 export function validate(config: Record<string, unknown>): Env {

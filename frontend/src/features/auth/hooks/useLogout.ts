@@ -17,6 +17,7 @@ export function useLogout() {
     mutationFn: authApi.logout,
     onSuccess: response => {
       toast.success(response.message);
+      broadcastLogout();
     },
     onError: error => {
       if (isServerError(error)) {
@@ -28,7 +29,6 @@ export function useLogout() {
     onSettled: () => {
       useAuthStore.getState().clearAuth();
       queryClient.clear();
-      broadcastLogout();
       navigate(APP_ROUTES.LOGIN, { replace: true });
     },
   });
